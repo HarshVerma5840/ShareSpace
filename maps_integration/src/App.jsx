@@ -1,61 +1,138 @@
-import { Circle, LayerGroup, MapContainer, Marker, Popup, TileLayer, Tooltip } from 'react-leaflet';
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-
-const cityData = [
-  { name: 'New Delhi', position: [28.6139, 77.209] },
-  { name: 'Mumbai', position: [19.076, 72.8777] },
-  { name: 'Bengaluru', position: [12.9716, 77.5946] },
-  { name: 'Kolkata', position: [22.5726, 88.3639] },
-  { name: 'Chennai', position: [13.0827, 80.2707] },
-];
+import { useState } from 'react';
 
 const indiaBounds = [
   [6.5, 67.5],
   [37.5, 97.5],
 ];
 
-const capitalIcon = L.icon({
+const minIndiaZoom = 4;
+
+const stateLabels = [
+  { name: 'Rajasthan', position: [26.9, 73.9] },
+  { name: 'Gujarat', position: [22.8, 71.5] },
+  { name: 'Maharashtra', position: [19.6, 75.3] },
+  { name: 'Madhya Pradesh', position: [23.7, 78.4] },
+  { name: 'Karnataka', position: [15.2, 76.3] },
+  { name: 'Tamil Nadu', position: [11.1, 78.4] },
+  { name: 'Kerala', position: [10.4, 76.3] },
+  { name: 'Telangana', position: [17.8, 79.1] },
+  { name: 'Andhra Pradesh', position: [15.8, 79.7] },
+  { name: 'Odisha', position: [20.3, 85.8] },
+  { name: 'West Bengal', position: [23.4, 87.8] },
+  { name: 'Bihar', position: [25.8, 85.3] },
+  { name: 'Uttar Pradesh', position: [26.8, 80.9] },
+  { name: 'Punjab', position: [31.0, 75.4] },
+  { name: 'Haryana', position: [29.2, 76.2] },
+  { name: 'Assam', position: [26.0, 92.7] },
+  { name: 'Jammu and Kashmir', position: [34.2, 75.2] },
+];
+
+const invisibleIcon = L.divIcon({
+  className: 'state-label-anchor',
+  html: '<span></span>',
+  iconSize: [1, 1],
+});
+
+const pinIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
 
+function MapInteraction({ pinMode, onPlacePin, onZoomChange }) {
+  useMapEvents({
+    zoomend: (event) => {
+      onZoomChange(event.target.getZoom());
+    },
+    click: (event) => {
+      if (pinMode) {
+        onPlacePin(event.latlng);
+      }
+    },
+  });
+
+  return null;
+}
+
 function App() {
+  const [zoom, setZoom] = useState(minIndiaZoom);
+  const [pinMode, setPinMode] = useState(false);
+  const [pinnedLocation, setPinnedLocation] = useState(null);
+
+  const handlePlacePin = (latlng) => {
+    setPinnedLocation(latlng);
+    setPinMode(false);
+  };
+
+  const showStateLabels = zoom <= minIndiaZoom;
+
   return (
     <main className="page">
       <section className="hero">
         <h1>India Maps UI (React Leaflet)</h1>
-        <p>Interactive map focused on India with major city markers and a highlighted central region.</p>
+        <p>Map cropped to India. Zoom out to the lowest level to view state labels.</p>
+      </section>
+
+      <section className="controls">
+        <button
+          type="button"
+          className={`pin-button ${pinMode ? 'active' : ''}`}
+          onClick={() => setPinMode((current) => !current)}
+        >
+          {pinMode ? 'Pin mode: click on map' : 'Drop a pin'}
+        </button>
       </section>
 
       <section className="map-card">
-        <MapContainer center={[22.5937, 78.9629]} zoom={5} minZoom={4} maxBounds={indiaBounds} scrollWheelZoom>
+        <MapContainer
+          center={[22.5937, 78.9629]}
+          zoom={minIndiaZoom}
+          minZoom={minIndiaZoom}
+          maxZoom={10}
+          maxBounds={indiaBounds}
+          maxBoundsViscosity={1.0}
+          scrollWheelZoom
+          worldCopyJump={false}
+        >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            bounds={indiaBounds}
+            noWrap
           />
 
-          <LayerGroup>
-            {cityData.map((city) => (
-              <Marker key={city.name} position={city.position} icon={capitalIcon}>
-                <Popup>{city.name}</Popup>
-                <Tooltip direction="top" offset={[0, -25]} opacity={0.9}>
-                  {city.name}
+          <MapInteraction pinMode={pinMode} onPlacePin={handlePlacePin} onZoomChange={setZoom} />
+
+          {showStateLabels &&
+            stateLabels.map((state) => (
+              <Marker key={state.name} position={state.position} icon={invisibleIcon} interactive={false}>
+                <Tooltip permanent direction="center" className="state-label">
+                  {state.name}
                 </Tooltip>
               </Marker>
             ))}
-          </LayerGroup>
 
-          <Circle
-            center={[23.5, 79.0]}
-            radius={450000}
-            pathOptions={{ color: '#ea580c', fillColor: '#fdba74', fillOpacity: 0.35 }}
-          >
-            <Popup>Central India highlight region</Popup>
-          </Circle>
+          {pinnedLocation && (
+            <Marker position={pinnedLocation} icon={pinIcon}>
+              <Popup>
+                {pinnedLocation.lat.toFixed(6)}, {pinnedLocation.lng.toFixed(6)}
+              </Popup>
+            </Marker>
+          )}
         </MapContainer>
+      </section>
+
+      <section className="coordinates">
+        <h2>Selected Coordinates</h2>
+        <p>
+          {pinnedLocation
+            ? `Latitude: ${pinnedLocation.lat.toFixed(6)} | Longitude: ${pinnedLocation.lng.toFixed(6)}`
+            : 'No location selected yet.'}
+        </p>
       </section>
     </main>
   );
