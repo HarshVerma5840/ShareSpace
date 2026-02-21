@@ -7,9 +7,8 @@ A React + Vite demo that integrates **React Leaflet** with an India-focused map 
 ### Features
 
 - Map view constrained to India bounds.
-- Extreme street-level zoom enabled (up to zoom 19).
 - State labels visible only at the lowest zoom level.
-- "Create path" button lets you select 2 places on the map and draw a connecting path.
+- "Drop a pin" button to select a location and view coordinates.
 
 ### Run locally
 

@@ -31,33 +31,21 @@ body {
 
 .controls {
   display: flex;
-  gap: 0.7rem;
-  flex-wrap: wrap;
-}
-
-.pin-button,
-.secondary-button {
-  border-radius: 0.6rem;
-  padding: 0.55rem 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .pin-button {
   border: 1px solid #1d4ed8;
   background: #eff6ff;
   color: #1e3a8a;
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .pin-button.active {
   background: #1d4ed8;
   color: #ffffff;
-}
-
-.secondary-button {
-  border: 1px solid #94a3b8;
-  background: #ffffff;
-  color: #334155;
 }
 
 .map-card {
