@@ -1,0 +1,1 @@
+Sharespace is a parking application for searching your nearest parking spot
