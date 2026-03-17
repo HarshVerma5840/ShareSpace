@@ -1,0 +1,39 @@
+package com.sharespace.backend.booking;
+
+import jakarta.validation.Valid;
+import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/bookings")
+public class BookingController {
+
+    private final BookingService bookingService;
+
+    public BookingController(BookingService bookingService) {
+        this.bookingService = bookingService;
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public BookingReceiptResponse createBooking(@Valid @RequestBody BookingRequest request) {
+        return bookingService.createBooking(request);
+    }
+
+    @GetMapping("/guest/{guestId}")
+    public List<BookingResponse> getGuestBookings(@PathVariable Long guestId) {
+        return bookingService.getGuestBookings(guestId);
+    }
+
+    @GetMapping("/host/{hostId}")
+    public List<BookingResponse> getHostBookings(@PathVariable Long hostId) {
+        return bookingService.getHostBookings(hostId);
+    }
+}
