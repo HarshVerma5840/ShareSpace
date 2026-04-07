@@ -1,0 +1,105 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.page {
+  min-height: 100vh;
+  display: grid;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.hero p {
+  margin: 0.5rem 0 0;
+  color: #334155;
+}
+
+.controls {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.pin-button,
+.secondary-button {
+  border-radius: 0.6rem;
+  padding: 0.55rem 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pin-button {
+  border: 1px solid #1d4ed8;
+  background: #eff6ff;
+  color: #1e3a8a;
+}
+
+.pin-button.active {
+  background: #1d4ed8;
+  color: #ffffff;
+}
+
+.secondary-button {
+  border: 1px solid #94a3b8;
+  background: #ffffff;
+  color: #334155;
+}
+
+.map-card {
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  background: white;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.leaflet-container {
+  height: 70vh;
+  width: 100%;
+}
+
+.state-label {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: #0f172a;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.state-label::before {
+  display: none;
+}
+
+.coordinates {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.8rem;
+  padding: 0.9rem;
+}
+
+.coordinates h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.coordinates p {
+  margin: 0.4rem 0 0;
+  color: #334155;
+}
