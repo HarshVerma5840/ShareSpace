@@ -1,4 +1,4 @@
-import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, Popup, TileLayer, Tooltip, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useState } from 'react';
@@ -9,7 +9,6 @@ const indiaBounds = [
 ];
 
 const minIndiaZoom = 4;
-const maxStreetZoom = 19;
 
 const stateLabels = [
   { name: 'Rajasthan', position: [26.9, 73.9] },
@@ -37,29 +36,21 @@ const invisibleIcon = L.divIcon({
   iconSize: [1, 1],
 });
 
-const pointAIcon = L.icon({
+const pinIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
 
-const pointBIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  className: 'marker-b',
-});
-
-function MapInteraction({ routeMode, onMapClick, onZoomChange }) {
+function MapInteraction({ pinMode, onPlacePin, onZoomChange }) {
   useMapEvents({
     zoomend: (event) => {
       onZoomChange(event.target.getZoom());
     },
     click: (event) => {
-      if (routeMode) {
-        onMapClick(event.latlng);
+      if (pinMode) {
+        onPlacePin(event.latlng);
       }
     },
   });
@@ -69,54 +60,30 @@ function MapInteraction({ routeMode, onMapClick, onZoomChange }) {
 
 function App() {
   const [zoom, setZoom] = useState(minIndiaZoom);
-  const [routeMode, setRouteMode] = useState(false);
-  const [routePoints, setRoutePoints] = useState([]);
+  const [pinMode, setPinMode] = useState(false);
+  const [pinnedLocation, setPinnedLocation] = useState(null);
 
-  const handleRouteClick = (latlng) => {
-    setRoutePoints((current) => {
-      if (current.length >= 2) {
-        return [latlng];
-      }
-      const nextPoints = [...current, latlng];
-      if (nextPoints.length === 2) {
-        setRouteMode(false);
-      }
-      return nextPoints;
-    });
-  };
-
-  const handleRouteModeToggle = () => {
-    setRoutePoints([]);
-    setRouteMode((current) => !current);
-  };
-
-  const handleClearRoute = () => {
-    setRoutePoints([]);
-    setRouteMode(false);
+  const handlePlacePin = (latlng) => {
+    setPinnedLocation(latlng);
+    setPinMode(false);
   };
 
   const showStateLabels = zoom <= minIndiaZoom;
-  const hasRoute = routePoints.length === 2;
 
   return (
     <main className="page">
       <section className="hero">
         <h1>India Maps UI (React Leaflet)</h1>
-        <p>
-          India-cropped map with street-level zoom. Use route mode to select two points and draw a path.
-        </p>
+        <p>Map cropped to India. Zoom out to the lowest level to view state labels.</p>
       </section>
 
       <section className="controls">
         <button
           type="button"
-          className={`pin-button ${routeMode ? 'active' : ''}`}
-          onClick={handleRouteModeToggle}
+          className={`pin-button ${pinMode ? 'active' : ''}`}
+          onClick={() => setPinMode((current) => !current)}
         >
-          {routeMode ? 'Route mode: select 2 points' : 'Create path (2 places)'}
-        </button>
-        <button type="button" className="secondary-button" onClick={handleClearRoute}>
-          Clear path
+          {pinMode ? 'Pin mode: click on map' : 'Drop a pin'}
         </button>
       </section>
 
@@ -125,7 +92,7 @@ function App() {
           center={[22.5937, 78.9629]}
           zoom={minIndiaZoom}
           minZoom={minIndiaZoom}
-          maxZoom={maxStreetZoom}
+          maxZoom={10}
           maxBounds={indiaBounds}
           maxBoundsViscosity={1.0}
           scrollWheelZoom
@@ -136,10 +103,9 @@ function App() {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             bounds={indiaBounds}
             noWrap
-            maxNativeZoom={19}
           />
 
-          <MapInteraction routeMode={routeMode} onMapClick={handleRouteClick} onZoomChange={setZoom} />
+          <MapInteraction pinMode={pinMode} onPlacePin={handlePlacePin} onZoomChange={setZoom} />
 
           {showStateLabels &&
             stateLabels.map((state) => (
@@ -150,32 +116,23 @@ function App() {
               </Marker>
             ))}
 
-          {routePoints[0] && (
-            <Marker position={routePoints[0]} icon={pointAIcon}>
-              <Tooltip permanent direction="top" offset={[0, -32]}>
-                A
-              </Tooltip>
+          {pinnedLocation && (
+            <Marker position={pinnedLocation} icon={pinIcon}>
+              <Popup>
+                {pinnedLocation.lat.toFixed(6)}, {pinnedLocation.lng.toFixed(6)}
+              </Popup>
             </Marker>
-          )}
-
-          {routePoints[1] && (
-            <Marker position={routePoints[1]} icon={pointBIcon}>
-              <Tooltip permanent direction="top" offset={[0, -32]}>
-                B
-              </Tooltip>
-            </Marker>
-          )}
-
-          {hasRoute && (
-            <Polyline positions={routePoints} pathOptions={{ color: '#1d4ed8', weight: 5, opacity: 0.9 }} />
           )}
         </MapContainer>
       </section>
 
       <section className="coordinates">
-        <h2>Path Coordinates</h2>
-        <p>{routePoints[0] ? `Point A: ${routePoints[0].lat.toFixed(6)}, ${routePoints[0].lng.toFixed(6)}` : 'Point A: not selected'}</p>
-        <p>{routePoints[1] ? `Point B: ${routePoints[1].lat.toFixed(6)}, ${routePoints[1].lng.toFixed(6)}` : 'Point B: not selected'}</p>
+        <h2>Selected Coordinates</h2>
+        <p>
+          {pinnedLocation
+            ? `Latitude: ${pinnedLocation.lat.toFixed(6)} | Longitude: ${pinnedLocation.lng.toFixed(6)}`
+            : 'No location selected yet.'}
+        </p>
       </section>
     </main>
   );
