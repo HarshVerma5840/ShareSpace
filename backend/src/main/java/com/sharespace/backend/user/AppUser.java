@@ -36,6 +36,10 @@ public class AppUser {
     @Column(nullable = false, length = 20)
     private UserRole role;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private UserVerificationStatus verificationStatus = UserVerificationStatus.NOT_APPLICABLE;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -84,6 +88,19 @@ public class AppUser {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public UserVerificationStatus getVerificationStatus() {
+        if (verificationStatus != null) {
+            return verificationStatus;
+        }
+        return role == UserRole.COMMUTER
+            ? UserVerificationStatus.UNVERIFIED
+            : UserVerificationStatus.NOT_APPLICABLE;
+    }
+
+    public void setVerificationStatus(UserVerificationStatus verificationStatus) {
+        this.verificationStatus = verificationStatus;
     }
 
     public Instant getCreatedAt() {

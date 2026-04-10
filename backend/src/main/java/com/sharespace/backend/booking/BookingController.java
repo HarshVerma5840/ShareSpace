@@ -1,5 +1,7 @@
 package com.sharespace.backend.booking;
 
+import com.sharespace.backend.auth.SessionAuthService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -16,24 +18,29 @@ import org.springframework.web.bind.annotation.RestController;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final SessionAuthService sessionAuthService;
 
-    public BookingController(BookingService bookingService) {
+    public BookingController(BookingService bookingService, SessionAuthService sessionAuthService) {
         this.bookingService = bookingService;
+        this.sessionAuthService = sessionAuthService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public BookingReceiptResponse createBooking(@Valid @RequestBody BookingRequest request) {
+    public BookingReceiptResponse createBooking(@Valid @RequestBody BookingRequest request, HttpSession session) {
+        sessionAuthService.requireSelf(session, request.guestId());
         return bookingService.createBooking(request);
     }
 
     @GetMapping("/guest/{guestId}")
-    public List<BookingResponse> getGuestBookings(@PathVariable Long guestId) {
+    public List<BookingResponse> getGuestBookings(@PathVariable Long guestId, HttpSession session) {
+        sessionAuthService.requireSelf(session, guestId);
         return bookingService.getGuestBookings(guestId);
     }
 
     @GetMapping("/host/{hostId}")
-    public List<BookingResponse> getHostBookings(@PathVariable Long hostId) {
+    public List<BookingResponse> getHostBookings(@PathVariable Long hostId, HttpSession session) {
+        sessionAuthService.requireSelf(session, hostId);
         return bookingService.getHostBookings(hostId);
     }
 }

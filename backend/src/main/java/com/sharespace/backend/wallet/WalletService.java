@@ -59,6 +59,24 @@ public class WalletService {
         walletRepository.save(payeeWallet);
     }
 
+    @Transactional
+    public void settleBooking(Long payerId, Long payeeId, BigDecimal totalCharge, BigDecimal hostPayout) {
+        Wallet payerWallet = findWalletEntity(payerId);
+        Wallet payeeWallet = findWalletEntity(payeeId);
+
+        if (payerWallet.getBalance().compareTo(totalCharge) < 0) {
+            throw new ApiException("Insufficient wallet balance. Please top up before booking.");
+        }
+
+        payerWallet.setBalance(payerWallet.getBalance().subtract(totalCharge));
+        payerWallet.setUpdatedAt(Instant.now());
+        payeeWallet.setBalance(payeeWallet.getBalance().add(hostPayout));
+        payeeWallet.setUpdatedAt(Instant.now());
+
+        walletRepository.save(payerWallet);
+        walletRepository.save(payeeWallet);
+    }
+
     private Wallet findWalletEntity(Long userId) {
         userRepository.findById(userId).orElseThrow(() -> new ApiException("User not found."));
         return walletRepository.findByUserId(userId)

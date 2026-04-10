@@ -1,12 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>shareSpace</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="bg-[#0a0a0a] text-zinc-100 font-sans antialiased selection:bg-[#3a86ff]/30 selection:text-[#3a86ff] h-screen overflow-hidden">
+    <div id="root" class="h-full"></div>
+    <script>
+      window.addEventListener('error', e => {
+        document.body.innerHTML += '<div style="color:red; background:white; position:absolute; top:0; left:0; z-index:9999; padding:20px;">' + e.message + '<br>' + e.filename + ':' + e.lineno + '</div>';
+      });
+      window.addEventListener('unhandledrejection', e => {
+        document.body.innerHTML += '<div style="color:red; background:white; position:absolute; top:50px; left:0; z-index:9999; padding:20px;">Promise Rejection: ' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '</div>';
+      });
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
-  </html>
+</html>

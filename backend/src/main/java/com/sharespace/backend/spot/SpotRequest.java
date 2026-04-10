@@ -1,10 +1,12 @@
 package com.sharespace.backend.spot;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.List;
 
 public record SpotRequest(
     @NotNull(message = "Host id is required")
@@ -29,6 +31,10 @@ public record SpotRequest(
     @NotBlank(message = "Slot type is required")
     String slotType,
     @NotNull(message = "Covered flag is required")
-    Boolean covered
+    Boolean covered,
+    /** Optional — hosts may attach zero or more navigation waypoints. */
+    @Valid
+    List<SpotLandmarkRequest> landmarks
 ) {
 }
+

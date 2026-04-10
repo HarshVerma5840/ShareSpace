@@ -10,6 +10,10 @@ public record BookingResponse(
     Long spotId,
     String spotTitle,
     String hostName,
+    BigDecimal baseAmount,
+    BigDecimal discountAmount,
+    BigDecimal platformFeeAmount,
+    BigDecimal hostPayoutAmount,
     BigDecimal totalAmount,
     BookingStatus status,
     Instant createdAt
@@ -22,6 +26,10 @@ public record BookingResponse(
             booking.getSpot().getId(),
             booking.getSpot().getTitle(),
             booking.getSpot().getHost().getFullName(),
+            booking.getBaseAmount(),
+            booking.getDiscountAmount(),
+            booking.getPlatformFeeAmount(),
+            booking.getHostPayoutAmount(),
             booking.getTotalAmount(),
             booking.getStatus(),
             booking.getCreatedAt()

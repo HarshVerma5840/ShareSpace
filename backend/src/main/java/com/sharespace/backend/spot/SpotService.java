@@ -4,8 +4,10 @@ import com.sharespace.backend.common.ApiException;
 import com.sharespace.backend.user.AppUser;
 import com.sharespace.backend.user.UserRepository;
 import com.sharespace.backend.user.UserRole;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +42,19 @@ public class SpotService {
         spot.setSlotType(request.slotType());
         spot.setCovered(request.covered());
 
+        if (request.landmarks() != null && !request.landmarks().isEmpty()) {
+            List<SpotLandmark> landmarks = new ArrayList<>();
+            for (SpotLandmarkRequest req : request.landmarks()) {
+                SpotLandmark lm = new SpotLandmark();
+                lm.setStepNumber(req.stepNumber());
+                lm.setDescription(req.description());
+                lm.setLatitude(req.latitude());
+                lm.setLongitude(req.longitude());
+                landmarks.add(lm);
+            }
+            spot.setLandmarks(landmarks);
+        }
+
         return SpotResponse.from(spotRepository.save(spot), null);
     }
 
@@ -65,6 +80,29 @@ public class SpotService {
     public Spot getSpotEntity(Long spotId) {
         return spotRepository.findById(spotId)
             .orElseThrow(() -> new ApiException("Parking spot not found."));
+    }
+
+    @Transactional
+    public void deleteSpot(Long spotId, Long actingUserId) {
+        Spot spot = getOwnedSpot(spotId, actingUserId);
+        spotRepository.delete(spot);
+    }
+
+    @Transactional
+    public SpotResponse toggleSpotStatus(Long spotId, Long actingUserId) {
+        Spot spot = getOwnedSpot(spotId, actingUserId);
+        spot.setIsActive(!spot.getIsActive());
+        spot = spotRepository.save(spot);
+        return SpotResponse.from(spot, null);
+    }
+
+    private Spot getOwnedSpot(Long spotId, Long actingUserId) {
+        Spot spot = spotRepository.findById(spotId)
+            .orElseThrow(() -> new ApiException("Parking spot not found."));
+        if (!spot.getHost().getId().equals(actingUserId)) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You can only manage your own parking spots.");
+        }
+        return spot;
     }
 
     private Double calculateDistance(Double latitude, Double longitude, Spot spot) {

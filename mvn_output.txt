@@ -1,0 +1,71 @@
+﻿mvn.cmd : WARNING: 
+A terminally 
+deprecated method 
+in sun.misc.Unsafe 
+has been called
+At line:1 char:127
++ ... s\apache-maven
+-3.9.11\bin\mvn.cmd"
+; & $mvn clean 
+compile 2>&1 | 
+Out-F ...
++                   
+                    
+  ~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo  
+            : NotS  
+  pecified: (WARN   
+ ING: A term...h    
+as been called:    
+String) [], Rem    
+oteException
+    + FullyQualifie 
+   dErrorId : Nati  
+  veCommandError
+ 
+WARNING: sun.misc.Un
+safe::staticFieldBas
+e has been called 
+by com.google.inject
+.internal.aop.Hidden
+ClassDefiner (file:/
+C:/Users/harsh/Deskt
+op/prjct/tools/apach
+e-maven-3.9.11/lib/g
+uice-5.1.0-classes.j
+ar)
+WARNING: Please 
+consider reporting 
+this to the 
+maintainers of 
+class com.google.inj
+ect.internal.aop.Hid
+denClassDefiner
+WARNING: sun.misc.Un
+safe::staticFieldBas
+e will be removed 
+in a future release
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------< com.sharespace:sharespace-backend >------------------
+[INFO] Building sharespace-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.4.1:clean (default-clean) @ sharespace-backend ---
+[INFO] Deleting C:\Users\harsh\Desktop\prjct\backend\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ sharespace-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.0:compile (default-compile) @ sharespace-backend ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 39 source files with javac [debug parameters release 21] to target\classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.762 s
+[INFO] Finished at: 2026-03-24T00:22:51+05:30
+[INFO] ------------------------------------------------------------------------

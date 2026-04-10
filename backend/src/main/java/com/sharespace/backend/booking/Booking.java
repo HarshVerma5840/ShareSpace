@@ -35,6 +35,18 @@ public class Booking {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(precision = 10, scale = 2)
+    private BigDecimal baseAmount;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal discountAmount;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal platformFeeAmount;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal hostPayoutAmount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private BookingStatus status;
@@ -68,6 +80,38 @@ public class Booking {
 
     public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
+    }
+
+    public BigDecimal getBaseAmount() {
+        return baseAmount;
+    }
+
+    public void setBaseAmount(BigDecimal baseAmount) {
+        this.baseAmount = baseAmount;
+    }
+
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public BigDecimal getPlatformFeeAmount() {
+        return platformFeeAmount;
+    }
+
+    public void setPlatformFeeAmount(BigDecimal platformFeeAmount) {
+        this.platformFeeAmount = platformFeeAmount;
+    }
+
+    public BigDecimal getHostPayoutAmount() {
+        return hostPayoutAmount;
+    }
+
+    public void setHostPayoutAmount(BigDecimal hostPayoutAmount) {
+        this.hostPayoutAmount = hostPayoutAmount;
     }
 
     public BookingStatus getStatus() {
