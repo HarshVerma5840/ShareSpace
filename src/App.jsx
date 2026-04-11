@@ -556,7 +556,7 @@ function GifShowcaseCard({ title, description, accent, type, index }) {
   );
 }
 
-function SettingsPage({ session, onSessionChange }) {
+function SettingsPage({ session, onSessionChange, onLogout, isDark, toggleDark }) {
   const [form, setForm] = useState({
     fullName: session.user.fullName || "",
     email: session.user.email || "",
@@ -609,12 +609,12 @@ function SettingsPage({ session, onSessionChange }) {
   const inputCls = "w-full bg-[#1e1e1e] border border-white/10 rounded-xl py-3 px-4 text-sm font-medium text-white placeholder-gray-500 focus:outline-none focus:border-[#3a86ff] focus:ring-1 focus:ring-[#3a86ff] transition-all";
 
   return (
-    <div className="p-8 pb-32 max-w-2xl mx-auto w-full">
-      <div className="mb-8">
+    <div className="w-full max-w-3xl mx-auto p-5 pb-28 sm:p-8 md:pb-10">
+      <div className="mb-6 sm:mb-8">
         <h1 className="text-3xl font-extrabold text-white">Settings</h1>
         <p className="text-gray-400 mt-2">Update your profile details</p>
       </div>
-      <div className="bg-[#121212]/95 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl p-6">
+      <div className="bg-[#121212]/95 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl p-5 sm:p-6">
         {status && <p className="text-[#3a86ff] font-bold mb-4">{status}</p>}
         {error && <p className="text-red-500 font-bold mb-4">{error}</p>}
         <div className="mb-6 flex flex-wrap gap-2">
@@ -675,6 +675,30 @@ function SettingsPage({ session, onSessionChange }) {
             )}
           </div>
         )}
+        <div className="mt-6 rounded-2xl border border-white/10 bg-[#0f0f0f] p-5">
+          <strong className="text-white block">App controls</strong>
+          <p className="text-sm text-gray-400 mt-2 mb-4">
+            Keep quick account actions here so the mobile navigation can stay focused on core pages.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              className="flex items-center justify-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-gray-200 transition-all hover:bg-white/10"
+              onClick={toggleDark}
+            >
+              {isDark ? <Sun size={18} /> : <Moon size={18} />}
+              {isDark ? "Switch to light mode" : "Switch to dark mode"}
+            </button>
+            <button
+              type="button"
+              className="flex items-center justify-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300 transition-all hover:bg-red-500/15"
+              onClick={onLogout}
+            >
+              <LogOut size={18} />
+              Log out
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -699,7 +723,10 @@ function AppNav({ role, page, setPage, user, wallet, onLogout, isDark, toggleDar
   return (
     <nav className="app-nav w-full md:w-[260px] shrink-0 bg-[#0f0f0f]/95 backdrop-blur-2xl border-t md:border-t-0 md:border-r border-white/10 flex md:flex-col p-3 md:p-5 h-[76px] md:h-screen fixed md:relative bottom-0 z-50 overflow-x-auto md:overflow-visible">
       <div className="hidden md:block pb-6 mb-4 border-b border-white/10">
-        <div className="brand-pill bg-[#ff7a00]/10 text-[#ff7a00] text-xs font-bold px-3 py-1 rounded-full w-fit mb-4">ShareSpace</div>
+        <div className="mb-4 flex items-center gap-3">
+          <img src="/applogo.png" alt="ShareSpace logo" className="h-10 w-10 object-contain" />
+          <div className="brand-pill bg-[#ff7a00]/10 text-[#ff7a00] text-xs font-bold px-3 py-1 rounded-full w-fit">ShareSpace</div>
+        </div>
         <p className="user-name text-white font-bold tracking-tight">{user.fullName}</p>
         <p className="user-meta text-gray-400 text-xs font-semibold mt-1">{getUserRoleLabel(user)}{getVerificationLabel(user) ? ` · ${getVerificationLabel(user)}` : ""}</p>
         <p className="wallet-meta text-[#3a86ff] text-sm font-semibold mt-1">{wallet ? formatCurrency(wallet.balance) : "—"}</p>
@@ -724,14 +751,6 @@ function AppNav({ role, page, setPage, user, wallet, onLogout, isDark, toggleDar
           );
         })}
       </ul>
-      <div className="hidden md:flex flex-col gap-2 pt-4 border-t border-white/10">
-        <button type="button" className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-gray-400 hover:bg-white/5 transition-all text-left" onClick={toggleDark}>
-          {isDark ? <Sun size={18} /> : <Moon size={18} />} {isDark ? "Light Mode" : "Dark Mode"}
-        </button>
-        <button type="button" className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-all text-left" onClick={onLogout}>
-          <LogOut size={18} /> Log out
-        </button>
-      </div>
     </nav>
   );
 }
@@ -858,7 +877,7 @@ function AuthScreen({ onAuthenticated }) {
   const inputCls = "w-full rounded-2xl border border-white/10 bg-[#0f1720]/88 px-4 py-3.5 text-sm font-medium text-white placeholder-gray-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] backdrop-blur-xl transition-all focus:border-[#3a86ff] focus:outline-none focus:ring-1 focus:ring-[#3a86ff]";
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#22252a] text-white">
+    <div className="relative min-h-screen overflow-x-hidden overflow-y-auto bg-[#22252a] text-white">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.05),transparent_24%),radial-gradient(circle_at_top_right,rgba(255,164,76,0.12),transparent_24%),linear-gradient(180deg,#2b2f34_0%,#1e2126_48%,#17191d_100%)]" />
       <div className="absolute inset-0 parking-grid opacity-[0.08]" />
       <div className="absolute inset-0 asphalt-noise opacity-60" />
@@ -871,20 +890,16 @@ function AuthScreen({ onAuthenticated }) {
           initial={{ opacity: 0, y: -18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45 }}
-          className="mb-8 flex items-center justify-between rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 backdrop-blur-xl"
+          className="mb-8 flex items-start justify-start"
         >
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff7a00] to-[#ffb347] text-[#081019] shadow-[0_10px_30px_rgba(255,122,0,0.28)]">
-              <Car size={20} />
+            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_rgba(255,122,0,0.18)]">
+              <img src="/applogo.png" alt="ShareSpace logo" className="h-10 w-10 object-cover" />
             </div>
             <div>
               <strong className="block text-sm font-black uppercase tracking-[0.22em] text-white">ShareSpace</strong>
               <span className="text-xs text-gray-400">Parking marketplace for India</span>
             </div>
-          </div>
-          <div className="hidden items-center gap-3 sm:flex">
-            <span className="rounded-full border border-[#3a86ff]/20 bg-[#3a86ff]/10 px-3 py-1 text-xs font-semibold text-[#98c0ff]">Maps + wallet</span>
-            <span className="rounded-full border border-[#ff7a00]/20 bg-[#ff7a00]/10 px-3 py-1 text-xs font-semibold text-[#ffbe73]">Commuter verification</span>
           </div>
         </motion.header>
 
@@ -1396,9 +1411,9 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
   const inputCls = "w-full bg-[#1e1e1e]/90 backdrop-blur-xl border border-white/10 rounded-xl py-3 px-4 text-sm font-medium text-white placeholder-gray-500 focus:outline-none focus:border-[#3a86ff] transition-all";
 
   return (
-    <div className="host-shell flex h-screen w-screen relative bg-[#1a1c20] text-zinc-100 font-sans overflow-hidden selection:bg-[#3a86ff]/30 selection:text-[#3a86ff]">
+    <div className="host-shell flex min-h-screen md:h-screen w-full relative bg-[#1a1c20] text-zinc-100 font-sans overflow-hidden selection:bg-[#3a86ff]/30 selection:text-[#3a86ff]">
       <AppNav role="HOST" page={page} setPage={setPage} user={session.user} wallet={wallet} onLogout={onLogout} isDark={isDark} toggleDark={toggleDark} />
-      <main className="host-main flex-1 relative z-10 w-full overflow-y-auto bg-[linear-gradient(180deg,#2a2d31_0%,#1f2226_44%,#17191d_100%)]">
+      <main className="host-main flex-1 relative z-10 w-full overflow-y-auto bg-[linear-gradient(180deg,#2a2d31_0%,#1f2226_44%,#17191d_100%)] pb-[92px] md:pb-0">
         {/* Decorative background elements */}
         <div className="pointer-events-none absolute inset-0 parking-grid opacity-[0.06]" />
         <div className="pointer-events-none absolute inset-0 asphalt-noise opacity-60" />
@@ -1406,11 +1421,11 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
         <div className="pointer-events-none absolute top-1/4 left-1/4 h-[500px] w-[500px] rounded-full bg-white/5 blur-[140px]" />
         <div className="pointer-events-none absolute bottom-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-[#ff7a00]/6 blur-[140px]" />
 
-        {page === "settings" && <SettingsPage session={session} onSessionChange={onSessionChange} />}
+        {page === "settings" && <SettingsPage session={session} onSessionChange={onSessionChange} onLogout={onLogout} isDark={isDark} toggleDark={toggleDark} />}
 
         {/* ── Dashboard ── */}
         {page === "dashboard" && (
-          <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="p-8 max-w-7xl mx-auto w-full relative z-10">
+          <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} className="p-5 pb-28 sm:p-8 md:pb-8 max-w-7xl mx-auto w-full relative z-10">
             <div className="mb-8">
               <div className="inline-flex items-center gap-2 rounded-full border border-[#ffb347]/20 bg-[#ff7a00]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-[#ffd59e]">
                 <Car size={14} />
@@ -1481,12 +1496,12 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
 
         {/* ── Register Spot ── */}
         {page === "register" && (
-          <div className="flex h-full w-full">
+          <div className="flex h-full w-full flex-col xl:flex-row">
             {/* Left Col: Form */}
-            <div className="w-[45%] min-w-[400px] overflow-y-auto p-8 lg:p-12 border-r border-white/10 relative z-10 bg-[#0a0a0a]/80 backdrop-blur-3xl scrollbar-none">
+            <div className="w-full xl:w-[45%] xl:min-w-[400px] overflow-y-auto p-5 pb-28 sm:p-8 lg:p-12 xl:border-r border-b xl:border-b-0 border-white/10 relative z-10 bg-[#0a0a0a]/80 backdrop-blur-3xl scrollbar-none">
               <div className="mb-8">
-                <h1 className="text-4xl font-black text-white tracking-tight">Register a Spot</h1>
-                <p className="text-gray-400 mt-2 text-lg">Fill details, place a pin, then publish</p>
+                <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">Register a Spot</h1>
+                <p className="text-gray-400 mt-2 text-base sm:text-lg">Fill details, place a pin, then publish</p>
               </div>
 
               {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl font-bold mb-6 flex items-center gap-2"><ShieldAlert size={18}/> {error}</div>}
@@ -1498,7 +1513,7 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
                     <input className={inputCls} placeholder="e.g. Safe Covered Parking in CP" value={form.title} onChange={(e) => setForm((c) => ({ ...c, title: e.target.value }))} />
                   </label>
                   
-                  <div className="flex gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
                     <label className="flex-1 flex flex-col gap-1.5 text-sm font-semibold text-gray-300">Hourly rate (₹)
                       <input className={inputCls} type="number" placeholder="50" value={form.hourlyRate} onChange={(e) => setForm((c) => ({ ...c, hourlyRate: e.target.value }))} />
                     </label>
@@ -1525,7 +1540,7 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
                 <div className="bg-[#121212] border border-white/10 rounded-3xl p-6 shadow-xl flex flex-col gap-5">
                   <strong className="text-white text-lg font-bold flex items-center gap-2"><MapPin size={18}/> Address details</strong>
                   
-                  <div className="flex gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
                     <label className="flex-1 flex flex-col gap-1.5 text-sm font-semibold text-gray-400">Address line 1
                       <input className={inputCls} value={form.addressLine1} onChange={(e) => setForm((c) => ({ ...c, addressLine1: e.target.value }))} />
                     </label>
@@ -1536,7 +1551,7 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
                   <label className="flex flex-col gap-1.5 text-sm font-semibold text-gray-400">Landmark
                     <input className={inputCls} value={form.landmark} onChange={(e) => setForm((c) => ({ ...c, landmark: e.target.value }))} />
                   </label>
-                  <div className="flex gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row">
                     <label className="flex-1 flex flex-col gap-1.5 text-sm font-semibold text-gray-400">City
                       <input className={inputCls} value={form.city} onChange={(e) => setForm((c) => ({ ...c, city: e.target.value }))} />
                     </label>
@@ -1577,7 +1592,7 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
             </div>
 
             {/* Right Col: Map */}
-            <div className="flex-1 relative z-0">
+            <div className="h-[42vh] min-h-[320px] xl:h-auto flex-1 relative z-0">
               {loadError ? <div className="flex items-center justify-center w-full h-full text-red-500 font-bold bg-[#111]">Google Maps failed to load.</div> : isLoaded ? (
                 <GoogleMap
                   center={selectedPoint || indiaCenter} zoom={selectedPoint ? 14 : 5}
@@ -1603,10 +1618,10 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
 
         {/* ── My Spots ── */}
         {page === "spots" && (
-          <div className="p-8 max-w-7xl mx-auto">
-            <div className="flex justify-between items-end mb-8 border-b border-white/10 pb-6">
+          <div className="p-5 pb-28 sm:p-8 md:pb-8 max-w-7xl mx-auto">
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-end mb-8 border-b border-white/10 pb-6">
               <div>
-                <h1 className="text-4xl font-extrabold text-white">My Listing Portfolio</h1>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-white">My Listing Portfolio</h1>
                 <p className="text-gray-400 mt-2">Manage your published parking spots</p>
               </div>
               <button type="button" className="bg-[#3a86ff] hover:bg-[#2563eb] text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg active:scale-95" onClick={() => setPage("register")}>
@@ -1615,7 +1630,7 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
             </div>
 
             {!spots.length ? (
-              <div className="bg-[#121212]/50 border border-white/10 rounded-3xl p-16 flex flex-col items-center justify-center text-center">
+              <div className="bg-[#121212]/50 border border-white/10 rounded-3xl p-8 sm:p-16 flex flex-col items-center justify-center text-center">
                 <LayoutList size={48} className="text-[#3a86ff] opacity-50 mb-6" />
                 <h2 className="text-2xl font-bold text-white mb-2">Portfolio is empty</h2>
                 <p className="text-gray-400 mb-8 max-w-md">You haven't listed any parking spots yet. Register your first spot to start earning.</p>
@@ -1674,7 +1689,7 @@ function HostDashboard({ session, onSessionChange, onLogout, isLoaded, loadError
 
         {/* ── Earnings ── */}
         {page === "earnings" && (
-          <div className="p-8 max-w-4xl mx-auto pb-32">
+          <div className="p-5 pb-28 sm:p-8 md:pb-10 max-w-4xl mx-auto">
             <div className="mb-8 border-b border-white/10 pb-6">
               <h1 className="text-4xl font-extrabold text-white">Earnings History</h1>
               <p className="text-gray-400 mt-2 text-lg">{bookings.length} total payouts · <strong className="text-[#3a86ff]">{formatCurrency(totalEarnings)}</strong> realized</p>
@@ -1854,7 +1869,7 @@ function CustomerDashboard({ session, onSessionChange, onLogout, isLoaded, loadE
   }, [currentLocation, destinationPoint, selectedSpot, landmarkFocusPoint]);
 
   return (
-    <div className="flex h-screen w-screen relative bg-[#0a0a0a] text-zinc-100 font-sans overflow-hidden selection:bg-[#3a86ff]/30 selection:text-[#3a86ff]">
+    <div className="flex min-h-screen md:h-screen w-full relative bg-[#0a0a0a] text-zinc-100 font-sans overflow-hidden selection:bg-[#3a86ff]/30 selection:text-[#3a86ff]">
       <AppNav role={session.user.role} page={page} setPage={(p) => { setPage(p); setError(""); }} user={session.user} wallet={wallet} onLogout={onLogout} isDark={isDark} toggleDark={toggleDark} />
       
       {/* Map is background of everything on 'map' view */}
@@ -1883,8 +1898,8 @@ function CustomerDashboard({ session, onSessionChange, onLogout, isLoaded, loadE
       )}
 
       {/* Foreground Content */}
-      <main className={`flex-1 relative z-10 w-full ${page === "map" ? "pointer-events-none" : "overflow-y-auto"}`}>
-        {page === "settings" && <SettingsPage session={session} onSessionChange={onSessionChange} />}
+      <main className={`flex-1 relative z-10 w-full pb-[92px] md:pb-0 ${page === "map" ? "pointer-events-none" : "overflow-y-auto"}`}>
+        {page === "settings" && <SettingsPage session={session} onSessionChange={onSessionChange} onLogout={onLogout} isDark={isDark} toggleDark={toggleDark} />}
 
         {page === "map" && (
           <div className="pointer-events-auto absolute top-4 left-4 right-4 md:top-6 md:left-6 md:w-[420px] flex flex-col gap-4">
@@ -1989,7 +2004,7 @@ function CustomerDashboard({ session, onSessionChange, onLogout, isLoaded, loadE
         )}
 
         {page === "history" && (
-          <div className="p-8 max-w-4xl mx-auto">
+          <div className="p-5 pb-28 sm:p-8 md:pb-8 max-w-4xl mx-auto">
             <h1 className="text-3xl font-extrabold text-white">My Bookings</h1>
             <p className="text-gray-400 mt-2 mb-8">{bookings.length} confirmed sessions</p>
             <div className="bg-[#121212]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-6 flex flex-col gap-3">
@@ -2010,7 +2025,7 @@ function CustomerDashboard({ session, onSessionChange, onLogout, isLoaded, loadE
         )}
 
         {page === "wallet" && (
-          <div className="p-8 max-w-2xl mx-auto">
+          <div className="p-5 pb-28 sm:p-8 md:pb-8 max-w-2xl mx-auto">
             <h1 className="text-3xl font-extrabold text-white">Wallet</h1>
             <p className="text-gray-400 mt-2 mb-8">Demo balance for mock payments</p>
             <WalletCard wallet={wallet} onTopUp={topUp} />
