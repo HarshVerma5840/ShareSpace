@@ -7,7 +7,7 @@ import {
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import SpotScanner from "./SpotScanner";
 import { motion, AnimatePresence } from "motion/react";
-import { Car, Navigation2, Search, MapPin, ShieldAlert, LogOut, Moon, Sun, Settings, History, Wallet, LayoutDashboard, PlusCircle, LayoutList, Banknote, ListPlus, Map as MapIcon, ArrowRight, Plane, Building2, BadgeCheck, CreditCard, Clock3 } from "lucide-react";
+import { Car, Navigation2, Search, MapPin, ShieldAlert, LogOut, Moon, Sun, Settings, History, Wallet, LayoutDashboard, PlusCircle, LayoutList, Banknote, ListPlus, Map as MapIcon, BadgeCheck, Users, FileCheck2, BarChart3, ParkingCircle, RefreshCw, Trash2 } from "lucide-react";
 
 const apiBaseUrl = `http://${window.location.hostname}:8080/api`;
 const sessionStorageKey = "sharespace-session";
@@ -46,118 +46,10 @@ const marketingStats = [
   { value: "5%", label: "Verified commuter savings" }
 ];
 
-const landingHighlights = [
-  {
-    title: "Live parking discovery",
-    description: "Browse nearby spots, compare distance, and book in a few taps with map-guided discovery.",
-    tone: "blue"
-  },
-  {
-    title: "Host and earn",
-    description: "Turn unused driveways and private bays into income with listing controls and wallet settlement.",
-    tone: "orange"
-  },
-  {
-    title: "Verification-aware pricing",
-    description: "Commuters can submit a driving license for review and unlock verified commuter discounts.",
-    tone: "amber"
-  }
-];
-
 const landingSteps = [
   { role: "Tourist", detail: "Open the map, book instantly, and park without needing commuter verification." },
   { role: "Commuter", detail: "Search, submit your DL for review in Settings, and unlock verified pricing after approval." },
   { role: "Host", detail: "List parking inventory, manage availability, and track real booking income from one dashboard." }
-];
-
-const floatingHeroCards = [
-  { icon: MapPin, label: "12 spots nearby", tone: "blue", position: "left-[4%] top-[16%]" },
-  { icon: ShieldAlert, label: "DL review ready", tone: "orange", position: "right-[4%] top-[12%]" },
-  { icon: Wallet, label: "Wallet checkout", tone: "amber", position: "left-[8%] bottom-[14%]" }
-];
-
-const marketingFeatures = [
-  {
-    icon: MapPin,
-    title: "Find parking nearby",
-    description: "Search real spots on a live map, compare distance and price, then lock one in fast.",
-    tone: "blue"
-  },
-  {
-    icon: Building2,
-    title: "Host your spare space",
-    description: "Publish driveways and bays, manage navigation notes, and turn idle parking into income.",
-    tone: "orange"
-  },
-  {
-    icon: Plane,
-    title: "Tourist instant booking",
-    description: "One-time customers can jump straight into booking without commuter verification friction.",
-    tone: "amber"
-  },
-  {
-    icon: BadgeCheck,
-    title: "Verified commuter savings",
-    description: "Commuters can submit a driving license for review and unlock the verified 5% discount.",
-    tone: "blue"
-  },
-  {
-    icon: Wallet,
-    title: "Wallet-powered checkout",
-    description: "Fast payments, clear booking receipts, and demo balance top-ups keep the flow smooth.",
-    tone: "orange"
-  },
-  {
-    icon: History,
-    title: "Booking history and receipts",
-    description: "Review active and completed bookings with totals, fees, discounts, and host payout details.",
-    tone: "amber"
-  }
-];
-
-const dashboardPreviewCards = [
-  {
-    title: "Map search",
-    eyebrow: "Driver view",
-    accent: "blue",
-    content: [
-      { label: "Nearby available", value: "4 spots" },
-      { label: "Fastest arrival", value: "2 min" }
-    ]
-  },
-  {
-    title: "Spot listing",
-    eyebrow: "Host tools",
-    accent: "orange",
-    content: [
-      { label: "Rate configured", value: "Rs.60/hr" },
-      { label: "Publish state", value: "Ready" }
-    ]
-  },
-  {
-    title: "Wallet",
-    eyebrow: "Payments",
-    accent: "amber",
-    content: [
-      { label: "Balance", value: "Rs.2,500" },
-      { label: "Last top-up", value: "Rs.500" }
-    ]
-  },
-  {
-    title: "Settings + verify",
-    eyebrow: "Commuter profile",
-    accent: "blue",
-    content: [
-      { label: "Verification", value: "Pending review" },
-      { label: "Benefit", value: "5% off" }
-    ]
-  }
-];
-
-const trustMoments = [
-  { title: "Built for city traffic", copy: "Layered around Indian parking habits, commuter use, and host-side inventory control." },
-  { title: "Designed for clarity", copy: "Prices, fee waivers, wallet movement, and booking outcomes are visible instead of hidden." },
-  { title: "Real workflows preserved", copy: "This design sits on top of your actual login, booking, wallet, and verification flows." }
 ];
 
 const gifShowcaseCards = [
@@ -195,6 +87,7 @@ const formatCurrency = (amount) =>
 const formatCovered = (covered) => (covered ? "Covered" : "Open air");
 const getUserRoleLabel = (user) => {
   if (!user) return "";
+  if (user.role === "ADMIN") return "Admin";
   if (user.role === "HOST") return "Host";
   if (user.role === "COMMUTER") return "Commuter";
   return "Tourist";
@@ -400,24 +293,6 @@ function ParkingLoadingScreen({ onComplete }) {
   );
 }
 
-function LandingFeatureCard({ title, description, tone }) {
-  const toneClasses = tone === "orange"
-    ? "from-[#ff7a00]/18 to-[#ffb347]/6 border-[#ff7a00]/20"
-    : tone === "amber"
-      ? "from-[#ffb347]/18 to-white/0 border-[#ffb347]/20"
-      : "from-[#3a86ff]/18 to-[#4facfe]/6 border-[#3a86ff]/20";
-
-  return (
-    <motion.article
-      whileHover={{ y: -6, scale: 1.01 }}
-      className={`rounded-[1.8rem] border bg-gradient-to-br ${toneClasses} p-6 shadow-[0_20px_50px_rgba(0,0,0,0.18)] backdrop-blur-xl`}
-    >
-      <h3 className="text-lg font-bold text-white">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-gray-400">{description}</p>
-    </motion.article>
-  );
-}
-
 function LandingSectionHeader({ eyebrow, title, description, align = "left" }) {
   return (
     <div className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
@@ -428,65 +303,6 @@ function LandingSectionHeader({ eyebrow, title, description, align = "left" }) {
       <h2 className="mt-5 text-3xl font-black tracking-tight text-white sm:text-4xl">{title}</h2>
       <p className={`mt-4 text-sm leading-7 text-gray-400 sm:text-base ${align === "center" ? "mx-auto max-w-2xl" : "max-w-2xl"}`}>{description}</p>
     </div>
-  );
-}
-
-function MarketingFeatureTile({ icon: Icon, title, description, tone, index }) {
-  const accentCls = tone === "orange"
-    ? "from-[#ff7a00]/20 to-[#ffb347]/5 border-[#ff7a00]/20 text-[#ffbe73]"
-    : tone === "amber"
-      ? "from-[#ffb347]/18 to-white/0 border-[#ffcf8a]/15 text-[#ffd27d]"
-      : "from-[#3a86ff]/18 to-[#4facfe]/5 border-[#3a86ff]/20 text-[#97c3ff]";
-
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.4, delay: index * 0.06 }}
-      whileHover={{ y: -6 }}
-      className="group rounded-[1.7rem] border border-white/10 bg-[#0b1219]/88 p-6 shadow-[0_26px_55px_rgba(0,0,0,0.22)] transition-all hover:border-white/15"
-    >
-      <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl border bg-gradient-to-br ${accentCls}`}>
-        <Icon size={22} />
-      </div>
-      <h3 className="mt-5 text-lg font-bold text-white">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-gray-400">{description}</p>
-      <div className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 transition-colors group-hover:text-white/80">
-        Explore workflow
-        <ArrowRight size={14} />
-      </div>
-    </motion.article>
-  );
-}
-
-function DashboardPreviewCard({ title, eyebrow, accent, content, index }) {
-  const accentBar = accent === "orange"
-    ? "from-[#ff7a00] to-[#ffb347]"
-    : accent === "amber"
-      ? "from-[#ffb347] to-[#ffd27d]"
-      : "from-[#3a86ff] to-[#4facfe]";
-
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.45, delay: index * 0.08 }}
-      className="relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[#0b1219]/88 p-5 shadow-[0_26px_65px_rgba(0,0,0,0.24)]"
-    >
-      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accentBar}`} />
-      <div className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">{eyebrow}</div>
-      <h3 className="mt-3 text-xl font-black text-white">{title}</h3>
-      <div className="mt-5 space-y-3">
-        {content.map((item) => (
-          <div key={item.label} className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
-            <span className="text-sm text-gray-400">{item.label}</span>
-            <span className="text-sm font-bold text-white">{item.value}</span>
-          </div>
-        ))}
-      </div>
-    </motion.article>
   );
 }
 
@@ -922,7 +738,7 @@ function AuthScreen({ onAuthenticated }) {
               </h1>
 
               <p className="mt-6 max-w-2xl text-base leading-7 text-gray-400 sm:text-lg">
-                Inspired by the `frontendidea1` concept, this ShareSpace front door now feels more cinematic and product-led while still connecting directly into your real login, booking, wallet, and host workflows.
+                This ShareSpace front door now feels more cinematic and product-led while still connecting directly into your real login, booking, wallet, and host workflows.
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -956,78 +772,6 @@ function AuthScreen({ onAuthenticated }) {
                     <div className="mt-2 text-sm text-gray-400">{stat.label}</div>
                   </motion.div>
                 ))}
-              </div>
-
-              <div className="relative mt-12 overflow-hidden rounded-[2rem] border border-white/10 bg-[#071018]/90 p-4 shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(58,134,255,0.12),transparent_25%),radial-gradient(circle_at_80%_70%,rgba(255,122,0,0.1),transparent_22%)]" />
-                <div className="relative grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-                  <div className="rounded-[1.5rem] border border-white/8 bg-[#0a141d]/80 p-5">
-                    <div className="mb-4 flex items-center justify-between">
-                      <strong className="text-base font-bold text-white">Live parking overview</strong>
-                      <span className="rounded-full bg-[#3a86ff]/10 px-3 py-1 text-xs font-semibold text-[#8eb7ff]">Realtime discovery</span>
-                    </div>
-                    <div className="relative h-64 overflow-hidden rounded-[1.3rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),transparent),#101820]">
-                      <div className="absolute inset-0 parking-grid opacity-25" />
-                      {floatingHeroCards.map((card, index) => (
-                        <motion.div
-                          key={card.label}
-                          initial={{ opacity: 0, scale: 0.86, y: 20 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          transition={{ duration: 0.45, delay: 0.45 + index * 0.1 }}
-                          className={`absolute hidden rounded-2xl border border-white/10 bg-[#0b1218]/80 px-4 py-3 text-sm font-semibold text-white shadow-[0_18px_42px_rgba(0,0,0,0.28)] backdrop-blur-xl lg:flex ${card.position}`}
-                        >
-                          <card.icon size={16} className={card.tone === "orange" ? "text-[#ffb347]" : card.tone === "amber" ? "text-[#ffd27d]" : "text-[#89b9ff]"} />
-                          <span className="ml-2">{card.label}</span>
-                        </motion.div>
-                      ))}
-                      {[
-                        { left: "18%", top: "32%", active: true },
-                        { left: "34%", top: "62%", active: true },
-                        { left: "53%", top: "28%", active: false },
-                        { left: "76%", top: "55%", active: true },
-                        { left: "61%", top: "72%", active: true }
-                      ].map((spot, index) => (
-                        <motion.div
-                          key={`${spot.left}-${spot.top}`}
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ duration: 0.35, delay: 0.6 + index * 0.08 }}
-                          className={`absolute h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full ${spot.active ? "bg-[#ff7a00]" : "bg-white/25"}`}
-                          style={{ left: spot.left, top: spot.top }}
-                        >
-                          {spot.active && (
-                            <motion.div
-                              animate={{ scale: [1, 1.9, 1], opacity: [0.6, 0, 0.6] }}
-                              transition={{ duration: 2.1, repeat: Infinity, delay: index * 0.18 }}
-                              className="absolute inset-0 rounded-full bg-[#ff7a00]"
-                            />
-                          )}
-                        </motion.div>
-                      ))}
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 0.4, delay: 0.95 }}
-                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                      >
-                        <div className="relative flex h-11 w-11 items-center justify-center rounded-full bg-[#3a86ff] shadow-[0_0_40px_rgba(58,134,255,0.35)]">
-                          <div className="h-4 w-4 rounded-full bg-white" />
-                          <motion.div
-                            animate={{ scale: [1, 2.1, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{ duration: 2.2, repeat: Infinity }}
-                            className="absolute inset-0 rounded-full border border-[#3a86ff]"
-                          />
-                        </div>
-                      </motion.div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4">
-                    {landingHighlights.map((item) => (
-                      <LandingFeatureCard key={item.title} {...item} />
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
           </motion.section>
@@ -1122,20 +866,6 @@ function AuthScreen({ onAuthenticated }) {
           </motion.section>
         </div>
 
-        <section className="mt-20">
-          <LandingSectionHeader
-            eyebrow="Feature stack"
-            title="Everything people need to move from search to parking"
-            description="The `frontendidea1` design language is now carried into a fuller product story: discovery, hosting, verification, wallet flow, and booking history all have a visible place on the homepage."
-            align="center"
-          />
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {marketingFeatures.map((feature, index) => (
-              <MarketingFeatureTile key={feature.title} index={index} {...feature} />
-            ))}
-          </div>
-        </section>
-
         <section className="mt-24">
           <LandingSectionHeader
             eyebrow="GIF-style motion"
@@ -1148,81 +878,6 @@ function AuthScreen({ onAuthenticated }) {
               <GifShowcaseCard key={card.title} index={index} {...card} />
             ))}
           </div>
-        </section>
-
-        <section className="mt-24 grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.45 }}
-            className="rounded-[2rem] border border-white/10 bg-[#0b1219]/88 p-7 shadow-[0_28px_70px_rgba(0,0,0,0.24)]"
-          >
-            <LandingSectionHeader
-              eyebrow="Verified commuter"
-              title="A premium commuter path without forcing tourists through verification"
-              description="Tourists can keep booking immediately. Commuters get a dedicated verification lane in Settings, and once approved they unlock the permanent 5% discount."
-            />
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-[1.5rem] border border-[#3a86ff]/15 bg-[#3a86ff]/10 p-5">
-                <div className="flex items-center gap-3 text-[#93c0ff]">
-                  <BadgeCheck size={18} />
-                  <strong className="text-sm uppercase tracking-[0.18em]">Verified commuter</strong>
-                </div>
-                <p className="mt-4 text-3xl font-black text-white">5% off</p>
-                <p className="mt-2 text-sm leading-6 text-gray-300">Discount automatically appears in the booking breakdown after approval.</p>
-              </div>
-              <div className="rounded-[1.5rem] border border-[#ff7a00]/15 bg-[#ff7a00]/10 p-5">
-                <div className="flex items-center gap-3 text-[#ffcf8a]">
-                  <Clock3 size={18} />
-                  <strong className="text-sm uppercase tracking-[0.18em]">Review flow</strong>
-                </div>
-                <p className="mt-4 text-3xl font-black text-white">Settings-first</p>
-                <p className="mt-2 text-sm leading-6 text-gray-300">The commuter submits driving-license documents from the profile area instead of a fake one-click badge.</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{ duration: 0.45, delay: 0.08 }}
-            className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#081019]/90 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.26)]"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_20%,rgba(58,134,255,0.12),transparent_28%),radial-gradient(circle_at_86%_72%,rgba(255,122,0,0.12),transparent_24%)]" />
-            <div className="relative">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-gray-400">
-                <CreditCard size={14} />
-                Product preview
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {dashboardPreviewCards.map((card, index) => (
-                  <DashboardPreviewCard key={card.title} index={index} {...card} />
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </section>
-
-        <section className="mt-24 grid gap-6 lg:grid-cols-3">
-          {trustMoments.map((item, index) => (
-            <motion.article
-              key={item.title}
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.4, delay: index * 0.08 }}
-              className="rounded-[1.8rem] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-2xl"
-            >
-              <div className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-gray-500">
-                Trust signal {index + 1}
-              </div>
-              <h3 className="mt-5 text-xl font-black text-white">{item.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-gray-400">{item.copy}</p>
-            </motion.article>
-          ))}
         </section>
 
         <motion.section
@@ -1276,7 +931,7 @@ function AuthScreen({ onAuthenticated }) {
                 </div>
               </div>
               <p className="mt-4 text-sm leading-7 text-gray-400">
-                A richer homepage inspired by `frontendidea1`, now merged into the working ShareSpace app without losing live auth, wallet, booking, and host flows.
+                A richer homepage merged into the working ShareSpace app without losing live auth, wallet, booking, and host flows.
               </p>
             </div>
             <div className="grid gap-8 sm:grid-cols-3">
@@ -1309,6 +964,374 @@ function AuthScreen({ onAuthenticated }) {
         </footer>
       </div>
     </div>
+  );
+}
+
+function AdminDashboard({ session, onLogout }) {
+  const [page, setPage] = useState("overview");
+  const [overview, setOverview] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [spots, setSpots] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [wallets, setWallets] = useState([]);
+  const [verifications, setVerifications] = useState([]);
+  const [selectedAdminUserId, setSelectedAdminUserId] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+
+  const adminItems = [
+    { key: "overview", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+    { key: "users", label: "Users", icon: <Users size={18} /> },
+    { key: "spots", label: "Parking Spots", icon: <ParkingCircle size={18} /> },
+    { key: "bookings", label: "Bookings", icon: <History size={18} /> },
+    { key: "verifications", label: "Verification Docs", icon: <FileCheck2 size={18} /> }
+  ];
+
+  const selectedAdminUser = users.find((user) => user.id === selectedAdminUserId) || null;
+  const selectedAdminUserWallet = selectedAdminUser
+    ? wallets.find((wallet) => wallet.userId === selectedAdminUser.id)
+    : null;
+
+  const loadAdminData = useCallback(async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const [overviewData, usersData, spotsData, bookingsData, walletsData, verificationData] = await Promise.all([
+        apiRequest("/admin/overview"),
+        apiRequest("/admin/users"),
+        apiRequest("/admin/spots"),
+        apiRequest("/admin/bookings"),
+        apiRequest("/admin/wallets"),
+        apiRequest("/admin/license-verifications")
+      ]);
+      setOverview(overviewData);
+      setUsers(usersData);
+      setSpots(spotsData);
+      setBookings(bookingsData);
+      setWallets(walletsData);
+      setVerifications(verificationData);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  useEffect(() => { loadAdminData(); }, [loadAdminData]);
+
+  const updateVerification = async (userId, verificationStatus) => {
+    setStatus("");
+    setError("");
+    try {
+      await apiRequest(`/admin/users/${userId}/verification-status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: verificationStatus })
+      });
+      setStatus(`User #${userId} marked ${verificationStatus}.`);
+      await loadAdminData();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const toggleSpot = async (spotId) => {
+    setStatus("");
+    setError("");
+    try {
+      await apiRequest(`/admin/spots/${spotId}/toggle-status`, { method: "PATCH" });
+      setStatus(`Spot #${spotId} status updated.`);
+      await loadAdminData();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const deleteSpot = async (spotId, title) => {
+    if (!window.confirm(`Delete "${title}"? This permanently removes the spot.`)) return;
+    setStatus("");
+    setError("");
+    try {
+      await apiRequest(`/admin/spots/${spotId}`, { method: "DELETE" });
+      setStatus(`Deleted spot #${spotId}.`);
+      await loadAdminData();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const deleteUser = async (user) => {
+    if (!window.confirm(`Delete ${user.fullName}? This also removes their wallet, verification data, bookings, and hosted spots.`)) return;
+    setStatus("");
+    setError("");
+    try {
+      await apiRequest(`/admin/users/${user.id}`, { method: "DELETE" });
+      setSelectedAdminUserId(null);
+      setStatus(`Deleted ${user.fullName}.`);
+      await loadAdminData();
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+
+  const StatCard = ({ label, value, icon, accent = "text-[#3a86ff]" }) => (
+    <section className="rounded-2xl border border-white/10 bg-[#121212]/95 p-5 shadow-xl">
+      <div className="flex items-center justify-between gap-4">
+        <span className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">{label}</span>
+        <span className={`rounded-xl border border-white/10 bg-white/5 p-2 ${accent}`}>{icon}</span>
+      </div>
+      <div className="mt-4 text-3xl font-black text-white">{value}</div>
+    </section>
+  );
+
+  const Empty = ({ message }) => (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm font-semibold text-gray-500">
+      {message}
+    </div>
+  );
+
+  return (
+    <div className="flex min-h-screen bg-[#080a0d] text-white">
+      <aside className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#0f0f0f]/95 p-3 backdrop-blur-2xl md:static md:inset-auto md:flex md:h-screen md:w-[280px] md:shrink-0 md:flex-col md:border-r md:border-t-0 md:p-5">
+        <div className="hidden border-b border-white/10 pb-5 md:block">
+          <div className="flex items-center gap-3">
+            <img src="/applogo.png" alt="ShareSpace logo" className="h-10 w-10 object-contain" />
+            <div>
+              <strong className="block text-sm font-black uppercase tracking-[0.2em] text-white">Admin</strong>
+              <span className="text-xs font-semibold text-gray-500">ShareSpace control</span>
+            </div>
+          </div>
+          <p className="mt-5 text-sm font-bold text-white">{session.user.fullName}</p>
+          <p className="text-xs text-gray-500">{session.user.email}</p>
+        </div>
+
+        <nav className="flex gap-2 overflow-x-auto md:mt-5 md:flex-col md:overflow-visible">
+          {adminItems.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => setPage(item.key)}
+              className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all md:w-full md:px-4 md:text-sm ${
+                page === item.key
+                  ? "border-[#ff7a00]/30 bg-[#ff7a00]/15 text-[#ffb347]"
+                  : "border-transparent text-gray-400 hover:border-white/10 hover:bg-white/5 hover:text-white"
+              }`}
+            >
+              {item.icon}
+              <span className="whitespace-nowrap">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <button
+          type="button"
+          className="mt-auto hidden items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-red-300 transition-all hover:bg-red-500/10 md:flex"
+          onClick={onLogout}
+        >
+          <LogOut size={18} />
+          Log out
+        </button>
+      </aside>
+
+      <main className="flex-1 overflow-y-auto pb-28 md:pb-0">
+        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#080a0d]/82 px-5 py-4 backdrop-blur-2xl md:px-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#ffb347]">ShareSpace Admin</p>
+              <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">Admin Dashboard</h1>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={loadAdminData} className="flex min-h-[44px] items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-gray-200 hover:bg-white/10">
+                <RefreshCw size={16} className={busy ? "animate-spin" : ""} />
+                Refresh
+              </button>
+              <button type="button" onClick={onLogout} className="flex min-h-[44px] items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-300 hover:bg-red-500/15 md:hidden">
+                <LogOut size={16} />
+                Log out
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-5 md:p-8">
+          {error && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">{error}</div>}
+          {status && <div className="rounded-xl border border-[#3a86ff]/20 bg-[#3a86ff]/10 px-4 py-3 text-sm font-bold text-[#8eb7ff]">{status}</div>}
+
+          {page === "overview" && (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard label="Users" value={overview?.totalUsers ?? 0} icon={<Users size={18} />} />
+                <StatCard label="Active Spots" value={`${overview?.activeSpots ?? 0}/${overview?.totalSpots ?? 0}`} icon={<ParkingCircle size={18} />} accent="text-[#ffb347]" />
+                <StatCard label="Bookings" value={overview?.totalBookings ?? 0} icon={<History size={18} />} />
+                <StatCard label="Pending Verification" value={overview?.pendingVerifications ?? 0} icon={<FileCheck2 size={18} />} accent="text-[#ffb347]" />
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2">
+                <StatCard label="Total Booking Value" value={formatCurrency(overview?.totalBookingValue ?? 0)} icon={<BarChart3 size={18} />} />
+                <StatCard label="Wallet Balance In System" value={formatCurrency(overview?.totalWalletBalance ?? 0)} icon={<Wallet size={18} />} accent="text-[#ffb347]" />
+              </div>
+            </>
+          )}
+
+          {page === "users" && (
+            <AdminTable title="Users Management">
+              {selectedAdminUser ? (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+                  <button type="button" className="mb-5 text-sm font-bold text-[#8eb7ff] hover:text-white" onClick={() => setSelectedAdminUserId(null)}>
+                    ← Back to all users
+                  </button>
+                  <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+                    <div>
+                      <h3 className="text-2xl font-black text-white">{selectedAdminUser.fullName}</h3>
+                      <p className="mt-2 text-sm text-gray-400">{selectedAdminUser.email}</p>
+                      <p className="mt-1 text-sm text-gray-400">{selectedAdminUser.phone}</p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Badge>{selectedAdminUser.role}</Badge>
+                        <Badge>{selectedAdminUser.verificationStatus}</Badge>
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-[#0b0b0b] p-5">
+                      <span className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Wallet</span>
+                      <div className="mt-3 text-3xl font-black text-[#3a86ff]">
+                        {selectedAdminUserWallet ? formatCurrency(selectedAdminUserWallet.balance) : "No wallet"}
+                      </div>
+                      {selectedAdminUserWallet?.updatedAt && (
+                        <p className="mt-2 text-xs text-gray-500">Updated {new Date(selectedAdminUserWallet.updatedAt).toLocaleString()}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-6 flex flex-wrap gap-3 border-t border-white/10 pt-5">
+                    {selectedAdminUser.role === "COMMUTER" && (
+                      <>
+                        <SmallAction onClick={() => updateVerification(selectedAdminUser.id, "VERIFIED")}>Approve verification</SmallAction>
+                        <SmallAction danger onClick={() => updateVerification(selectedAdminUser.id, "REJECTED")}>Reject verification</SmallAction>
+                      </>
+                    )}
+                    <SmallAction danger onClick={() => deleteUser(selectedAdminUser)}><Trash2 size={14} /> Delete user</SmallAction>
+                  </div>
+                </div>
+              ) : users.length ? users.map((user) => (
+                <AdminRow key={user.id} onClick={() => setSelectedAdminUserId(user.id)}>
+                  <div>
+                    <strong className="text-white">{user.fullName}</strong>
+                    <p className="text-xs text-gray-500">{user.email} · {user.phone}</p>
+                  </div>
+                  <Badge>{user.role}</Badge>
+                  <Badge>{user.verificationStatus}</Badge>
+                  <span className="text-xs font-semibold text-[#8eb7ff]">Open profile →</span>
+                </AdminRow>
+              )) : <Empty message="No users found." />}
+            </AdminTable>
+          )}
+
+          {page === "spots" && (
+            <AdminTable title="Parking Spots">
+              {spots.length ? spots.map((spot) => (
+                <AdminRow key={spot.id}>
+                  <div>
+                    <strong className="text-white">{spot.title}</strong>
+                    <p className="text-xs text-gray-500">{spot.address}</p>
+                    <p className="text-xs text-gray-500">Host: {spot.hostName}</p>
+                  </div>
+                  <Badge>{spot.isActive ? "ACTIVE" : "PAUSED"}</Badge>
+                  <span className="font-bold text-[#3a86ff]">{formatCurrency(spot.hourlyRate)}/hr</span>
+                  <div className="flex flex-wrap gap-2">
+                    <SmallAction onClick={() => toggleSpot(spot.id)}>{spot.isActive ? "Pause" : "Activate"}</SmallAction>
+                    <SmallAction danger onClick={() => deleteSpot(spot.id, spot.title)}><Trash2 size={14} /> Delete</SmallAction>
+                  </div>
+                </AdminRow>
+              )) : <Empty message="No spots found." />}
+            </AdminTable>
+          )}
+
+          {page === "bookings" && (
+            <AdminTable title="Bookings & Transactions">
+              {bookings.length ? bookings.map((booking) => (
+                <AdminRow key={booking.id}>
+                  <div>
+                    <strong className="text-white">{booking.spotTitle}</strong>
+                    <p className="text-xs text-gray-500">Guest: {booking.guestName} · Host: {booking.hostName}</p>
+                  </div>
+                  <Badge>{booking.status}</Badge>
+                  <span className="font-bold text-[#3a86ff]">{formatCurrency(booking.totalAmount)}</span>
+                  <span className="text-xs text-gray-500">Host payout {formatCurrency(booking.hostPayoutAmount ?? booking.totalAmount)}</span>
+                </AdminRow>
+              )) : <Empty message="No bookings found." />}
+            </AdminTable>
+          )}
+
+          {page === "verifications" && (
+            <AdminTable title="Verification Documents">
+              {verifications.length ? verifications.map((item) => (
+                <AdminRow key={item.id}>
+                  <div>
+                    <strong className="text-white">{item.userName}</strong>
+                    <p className="text-xs text-gray-500">{item.userEmail}</p>
+                    <p className="text-xs text-gray-500">DL: {item.licenseNumberMasked}</p>
+                  </div>
+                  <Badge>{item.status}</Badge>
+                  <span className="text-xs text-gray-500">Submitted {new Date(item.submittedAt).toLocaleString()}</span>
+                  <div className="flex flex-wrap gap-2">
+                    <SmallAction onClick={() => updateVerification(item.userId, "VERIFIED")}>Approve</SmallAction>
+                    <SmallAction danger onClick={() => updateVerification(item.userId, "REJECTED")}>Reject</SmallAction>
+                  </div>
+                </AdminRow>
+              )) : <Empty message="No verification submissions found." />}
+            </AdminTable>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+}
+
+function AdminTable({ title, children }) {
+  return (
+    <section className="rounded-2xl border border-white/10 bg-[#121212]/95 p-4 shadow-xl sm:p-6">
+      <h2 className="mb-4 text-xl font-black text-white">{title}</h2>
+      <div className="flex flex-col gap-3">{children}</div>
+    </section>
+  );
+}
+
+function AdminRow({ children, onClick }) {
+  const Component = onClick ? "button" : "article";
+  return (
+    <Component
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className={`grid w-full gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left text-sm md:grid-cols-[1.5fr_0.7fr_0.8fr_1fr] md:items-center ${
+        onClick ? "transition-all hover:border-[#ff7a00]/30 hover:bg-[#ff7a00]/5" : ""
+      }`}
+    >
+      {children}
+    </Component>
+  );
+}
+
+function Badge({ children }) {
+  return (
+    <span className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-gray-300">
+      {children}
+    </span>
+  );
+}
+
+function SmallAction({ children, danger = false, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onClick?.(event);
+      }}
+      className={`inline-flex min-h-[36px] items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
+        danger
+          ? "border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/15"
+          : "border-[#3a86ff]/20 bg-[#3a86ff]/10 text-[#8eb7ff] hover:bg-[#3a86ff]/15"
+      }`}
+    >
+      {children}
+    </button>
   );
 }
 
@@ -2108,7 +2131,9 @@ export default function App() {
     );
   }
 
-  return session.user.role === "HOST"
+  return session.user.role === "ADMIN"
+    ? <AdminDashboard session={session} onLogout={logout} />
+    : session.user.role === "HOST"
     ? <HostDashboard session={session} onSessionChange={updateSession} onLogout={logout} isLoaded={isLoaded} loadError={loadError} isDark={isDark} toggleDark={toggleDark} />
     : <CustomerDashboard session={session} onSessionChange={updateSession} onLogout={logout} isLoaded={isLoaded} loadError={loadError} isDark={isDark} toggleDark={toggleDark} />;
 }

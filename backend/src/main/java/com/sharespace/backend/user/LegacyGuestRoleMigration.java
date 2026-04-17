@@ -27,7 +27,7 @@ public class LegacyGuestRoleMigration implements ApplicationRunner {
             """
             alter table if exists app_users
             add constraint app_users_role_check
-            check (role in ('HOST', 'COMMUTER', 'TOURIST', 'GUEST'))
+            check (role in ('ADMIN', 'HOST', 'COMMUTER', 'TOURIST', 'GUEST'))
             """
         );
 
@@ -45,7 +45,7 @@ public class LegacyGuestRoleMigration implements ApplicationRunner {
             """
             alter table if exists app_users
             add constraint app_users_role_check
-            check (role in ('HOST', 'COMMUTER', 'TOURIST'))
+            check (role in ('ADMIN', 'HOST', 'COMMUTER', 'TOURIST'))
             """
         );
 

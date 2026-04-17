@@ -28,6 +28,12 @@ public class WalletService {
         return walletRepository.save(wallet);
     }
 
+    @Transactional
+    public Wallet getOrCreateWalletForUser(AppUser user, BigDecimal initialBalance) {
+        return walletRepository.findByUserId(user.getId())
+            .orElseGet(() -> createWalletForUser(user, initialBalance));
+    }
+
     @Transactional(readOnly = true)
     public WalletResponse getWallet(Long userId) {
         return WalletResponse.from(findWalletEntity(userId));
