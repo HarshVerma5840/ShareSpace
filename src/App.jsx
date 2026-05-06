@@ -9,7 +9,8 @@ import SpotScanner from "./SpotScanner";
 import { motion, AnimatePresence } from "motion/react";
 import { Car, Navigation2, Search, MapPin, ShieldAlert, LogOut, Moon, Sun, Settings, History, Wallet, LayoutDashboard, PlusCircle, LayoutList, Banknote, ListPlus, Map as MapIcon, BadgeCheck, Users, FileCheck2, BarChart3, ParkingCircle, RefreshCw, Trash2 } from "lucide-react";
 
-const apiBaseUrl = `http://${window.location.hostname}:8080/api`;
+const fallbackApiBaseUrl = `${window.location.protocol}//${window.location.hostname}:8080/api`;
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || fallbackApiBaseUrl).replace(/\/$/, "");
 const sessionStorageKey = "sharespace-session";
 const libraries = ["places"];
 const indiaCenter = { lat: 22.5937, lng: 78.9629 };
@@ -136,7 +137,7 @@ async function apiRequest(path, options = {}) {
         ...options
       });
   } catch {
-    throw new Error("ShareSpace backend is unavailable on localhost:8080.");
+    throw new Error(`ShareSpace backend is unavailable at ${apiBaseUrl}.`);
   }
   let payload = null;
   try { payload = await response.json(); } catch { payload = null; }
@@ -321,7 +322,11 @@ function GifShowcaseCard({ title, description, accent, type, index }) {
       transition={{ duration: 0.42, delay: index * 0.08 }}
       className={`overflow-hidden rounded-[1.9rem] border bg-gradient-to-br ${accentCls} p-5 shadow-[0_26px_60px_rgba(0,0,0,0.24)]`}
     >
-      <div className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">Animated scene</div>
+      <div className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">
+        {type === "search" && "Live parking radar"}
+        {type === "drive" && "Turn-by-turn guidance"}
+        {type === "verify" && "Commuter verification"}
+      </div>
       <h3 className="mt-3 text-xl font-black text-white">{title}</h3>
       <p className="mt-3 text-sm leading-6 text-gray-400">{description}</p>
 
@@ -868,9 +873,9 @@ function AuthScreen({ onAuthenticated }) {
 
         <section className="mt-24">
           <LandingSectionHeader
-            eyebrow="GIF-style motion"
-            title="Parking-themed animated moments that make the homepage feel alive"
-            description="These looping scenes act like lightweight built-in GIFs, but stay native to the app so they match the theme and don’t rely on external media files."
+            eyebrow="How ShareSpace works"
+            title="From discovery to destination - every step, seamlessly guided"
+            description="Search live spots on the radar, follow a glowing route to your bay, and get verified as a commuter. Three flows, zero friction."
             align="center"
           />
           <div className="mt-10 grid gap-6 lg:grid-cols-3">
