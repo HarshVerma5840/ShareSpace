@@ -7,10 +7,15 @@ import {
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import SpotScanner from "./SpotScanner";
 import { motion, AnimatePresence } from "motion/react";
-import { Car, Navigation2, Search, MapPin, ShieldAlert, LogOut, Moon, Sun, Settings, History, Wallet, LayoutDashboard, PlusCircle, LayoutList, Banknote, ListPlus, Map as MapIcon, BadgeCheck, Users, FileCheck2, BarChart3, ParkingCircle, RefreshCw, Trash2 } from "lucide-react";
+import { Car, Navigation2, Search, MapPin, ShieldAlert, LogOut, Moon, Sun, Settings, History, Wallet, LayoutDashboard, PlusCircle, LayoutList, Banknote, ListPlus, Map as MapIcon, ArrowRight, Plane, Building2, BadgeCheck, CreditCard, Clock3 } from "lucide-react";
 
-const fallbackApiBaseUrl = `${window.location.protocol}//${window.location.hostname}:8080/api`;
-const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || fallbackApiBaseUrl).replace(/\/$/, "");
+import { apiRequest } from "./utils/api";
+import { formatCurrency, formatCovered, getUserRoleLabel, getVerificationLabel, emptySpot, emptyLogin, emptyRegister, isVerifiedCommuter, getPlatformFeePreview, getVerifiedDiscountPreview } from "./utils/helpers";
+import useAuthStore from "./stores/authStore";
+import useMapStore from "./stores/mapStore";
+import useDashboardStore from "./stores/dashboardStore";
+
+const apiBaseUrl = `http://${window.location.hostname}:8080/api`;
 const sessionStorageKey = "sharespace-session";
 const libraries = ["places"];
 const indiaCenter = { lat: 22.5937, lng: 78.9629 };
@@ -24,22 +29,6 @@ const mapOptions = {
 };
 const PROXIMITY_METRES = 150;
 
-const emptyLogin = { email: "", password: "" };
-const emptyRegister = { fullName: "", email: "", phone: "", password: "", role: "TOURIST" };
-const emptySpot = {
-  title: "",
-  availabilityWindow: "",
-  hourlyRate: "60",
-  slotType: "Car",
-  covered: true,
-  addressLine1: "",
-  addressLine2: "",
-  landmark: "",
-  city: "",
-  state: "",
-  postalCode: "",
-  landmarks: []
-};
 
 const marketingStats = [
   { value: "10K+", label: "Smart parking slots" },
@@ -47,10 +36,118 @@ const marketingStats = [
   { value: "5%", label: "Verified commuter savings" }
 ];
 
+const landingHighlights = [
+  {
+    title: "Live parking discovery",
+    description: "Browse nearby spots, compare distance, and book in a few taps with map-guided discovery.",
+    tone: "blue"
+  },
+  {
+    title: "Host and earn",
+    description: "Turn unused driveways and private bays into income with listing controls and wallet settlement.",
+    tone: "orange"
+  },
+  {
+    title: "Verification-aware pricing",
+    description: "Commuters can submit a driving license for review and unlock verified commuter discounts.",
+    tone: "amber"
+  }
+];
+
 const landingSteps = [
   { role: "Tourist", detail: "Open the map, book instantly, and park without needing commuter verification." },
   { role: "Commuter", detail: "Search, submit your DL for review in Settings, and unlock verified pricing after approval." },
   { role: "Host", detail: "List parking inventory, manage availability, and track real booking income from one dashboard." }
+];
+
+const floatingHeroCards = [
+  { icon: MapPin, label: "12 spots nearby", tone: "blue", position: "left-[4%] top-[16%]" },
+  { icon: ShieldAlert, label: "DL review ready", tone: "orange", position: "right-[4%] top-[12%]" },
+  { icon: Wallet, label: "Wallet checkout", tone: "amber", position: "left-[8%] bottom-[14%]" }
+];
+
+const marketingFeatures = [
+  {
+    icon: MapPin,
+    title: "Find parking nearby",
+    description: "Search real spots on a live map, compare distance and price, then lock one in fast.",
+    tone: "blue"
+  },
+  {
+    icon: Building2,
+    title: "Host your spare space",
+    description: "Publish driveways and bays, manage navigation notes, and turn idle parking into income.",
+    tone: "orange"
+  },
+  {
+    icon: Plane,
+    title: "Tourist instant booking",
+    description: "One-time customers can jump straight into booking without commuter verification friction.",
+    tone: "amber"
+  },
+  {
+    icon: BadgeCheck,
+    title: "Verified commuter savings",
+    description: "Commuters can submit a driving license for review and unlock the verified 5% discount.",
+    tone: "blue"
+  },
+  {
+    icon: Wallet,
+    title: "Wallet-powered checkout",
+    description: "Fast payments, clear booking receipts, and demo balance top-ups keep the flow smooth.",
+    tone: "orange"
+  },
+  {
+    icon: History,
+    title: "Booking history and receipts",
+    description: "Review active and completed bookings with totals, fees, discounts, and host payout details.",
+    tone: "amber"
+  }
+];
+
+const dashboardPreviewCards = [
+  {
+    title: "Map search",
+    eyebrow: "Driver view",
+    accent: "blue",
+    content: [
+      { label: "Nearby available", value: "4 spots" },
+      { label: "Fastest arrival", value: "2 min" }
+    ]
+  },
+  {
+    title: "Spot listing",
+    eyebrow: "Host tools",
+    accent: "orange",
+    content: [
+      { label: "Rate configured", value: "Rs.60/hr" },
+      { label: "Publish state", value: "Ready" }
+    ]
+  },
+  {
+    title: "Wallet",
+    eyebrow: "Payments",
+    accent: "amber",
+    content: [
+      { label: "Balance", value: "Rs.2,500" },
+      { label: "Last top-up", value: "Rs.500" }
+    ]
+  },
+  {
+    title: "Settings + verify",
+    eyebrow: "Commuter profile",
+    accent: "blue",
+    content: [
+      { label: "Verification", value: "Pending review" },
+      { label: "Benefit", value: "5% off" }
+    ]
+  }
+];
+
+const trustMoments = [
+  { title: "Built for city traffic", copy: "Layered around Indian parking habits, commuter use, and host-side inventory control." },
+  { title: "Designed for clarity", copy: "Prices, fee waivers, wallet movement, and booking outcomes are visible instead of hidden." },
+  { title: "Real workflows preserved", copy: "This design sits on top of your actual login, booking, wallet, and verification flows." }
 ];
 
 const gifShowcaseCards = [
@@ -74,35 +171,9 @@ const gifShowcaseCards = [
   }
 ];
 
-/* ─── session helpers ─── */
-const getStoredSession = () => {
-  try { return JSON.parse(window.localStorage.getItem(sessionStorageKey) || "null"); }
-  catch { return null; }
-};
-const setStoredSession = (s) => window.localStorage.setItem(sessionStorageKey, JSON.stringify(s));
-const clearStoredSession = () => window.localStorage.removeItem(sessionStorageKey);
+/* ─── session helpers moved to authStore.js ─── */
 
 /* ─── formatting ─── */
-const formatCurrency = (amount) =>
-  new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(amount ?? 0));
-const formatCovered = (covered) => (covered ? "Covered" : "Open air");
-const getUserRoleLabel = (user) => {
-  if (!user) return "";
-  if (user.role === "ADMIN") return "Admin";
-  if (user.role === "HOST") return "Host";
-  if (user.role === "COMMUTER") return "Commuter";
-  return "Tourist";
-};
-const getVerificationLabel = (user) => {
-  if (!user || user.role !== "COMMUTER") return null;
-  if (user.verificationStatus === "VERIFIED") return "Verified Commuter";
-  if (user.verificationStatus === "PENDING") return "Verification Pending";
-  if (user.verificationStatus === "REJECTED") return "Verification Rejected";
-  return "Unverified Commuter";
-};
-const isVerifiedCommuter = (user) => user?.role === "COMMUTER" && user?.verificationStatus === "VERIFIED";
-const getPlatformFeePreview = (hourlyRate) => Number(hourlyRate ?? 0) * 0.10;
-const getVerifiedDiscountPreview = (hourlyRate) => Number(hourlyRate ?? 0) * 0.05;
 
 const buildAddress = (form) =>
   [form.addressLine1, form.addressLine2, form.landmark, form.city, form.state, form.postalCode, "India"]
@@ -127,257 +198,101 @@ function haversineMetres(lat1, lng1, lat2, lng2) {
 }
 
 /* ─── API ─── */
-async function apiRequest(path, options = {}) {
-  let response;
-  const isFormData = options.body instanceof FormData;
-    try {
-      response = await fetch(`${apiBaseUrl}${path}`, {
-        credentials: "include",
-        headers: isFormData ? { ...(options.headers || {}) } : { "Content-Type": "application/json", ...(options.headers || {}) },
-        ...options
-      });
-  } catch {
-    throw new Error(`ShareSpace backend is unavailable at ${apiBaseUrl}.`);
-  }
-  let payload = null;
-  try { payload = await response.json(); } catch { payload = null; }
-  if (!response.ok) {
-    const validationErrors = payload?.errors ? Object.values(payload.errors).join(" ") : "";
-    throw new Error(payload?.message || validationErrors || "Request failed.");
-  }
-  return payload;
-}
+
 
 /* ══════════════════════════════════════════════
    SHARED SMALL COMPONENTS
 ══════════════════════════════════════════════ */
 
-function ListItem({ children, active, asButton = false, onClick }) {
-  const baseCls = "p-4 rounded-xl transition-all border relative overflow-hidden group flex justify-between items-center w-full text-left gap-3 relative ";
-  const cls = active 
-    ? baseCls + "bg-[#1e1e1e] border-[#3a86ff] shadow-[0_0_15px_rgba(58,134,255,0.08)]" 
-    : asButton 
-      ? baseCls + "bg-[#161616] border-white/5 hover:border-white/20 cursor-pointer text-gray-200 hover:text-white" 
-      : baseCls + "bg-[#161616] border-white/5 text-gray-200";
 
-  const Content = (
-    <>
-      {active && <motion.div layoutId="activeIndicator" className="absolute left-0 top-0 bottom-0 w-1 bg-[#3a86ff]" />}
-      {children}
-    </>
-  );
 
-  if (asButton) {
-    return (
-      <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} type="button" className={cls} onClick={onClick}>
-        {Content}
-      </motion.button>
-    );
-  }
-  return <motion.article layout className={cls}>{Content}</motion.article>;
-}
 
-function WalletCard({ wallet, onTopUp }) {
-  return (
-    <section className="bg-gradient-to-br from-[#ff7a00] to-[#ffb347] text-white rounded-2xl p-6 shadow-[0_8px_28px_rgba(255,122,0,0.28)] flex flex-col gap-3">
-      <span className="bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-full w-fit">Wallet</span>
-      <h2 className="text-4xl font-extrabold">{wallet ? formatCurrency(wallet.balance) : "Loading..."}</h2>
-      <p className="text-white/90 text-sm">Mock balance for top-ups, bookings, and host earnings.</p>
-      <button type="button" className="mt-2 bg-white text-[#ff7a00] font-bold py-3 px-6 rounded-xl hover:bg-gray-100 transition-colors self-start shadow-xl active:scale-95" onClick={onTopUp}>
-        + Add Rs.500 demo balance
-      </button>
-    </section>
-  );
-}
 
-function ParkingLoadingScreen({ onComplete }) {
-  useEffect(() => {
-    const timer = window.setTimeout(onComplete, 2600);
-    return () => window.clearTimeout(timer);
-  }, [onComplete]);
 
-  return (
-    <motion.div
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.45, ease: "easeOut" } }}
-      className="fixed inset-0 z-[120] overflow-hidden bg-[#05070b]"
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(58,134,255,0.18),transparent_34%),radial-gradient(circle_at_bottom,rgba(255,122,0,0.16),transparent_30%)]" />
-      <div className="absolute inset-0 asphalt-noise opacity-70" />
-      <div className="absolute inset-0 parking-grid opacity-30" />
 
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-[#ffb86b]"
-        >
-          <Car size={14} />
-          Smart Parking Boot
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.1 }}
-          className="max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl"
-        >
-          Routing drivers into smarter parking.
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.18 }}
-          className="mt-4 max-w-xl text-sm text-gray-400 sm:text-base"
-        >
-          Loading the live parking grid, commuter verification flow, and host wallet controls.
-        </motion.p>
-
-        <div className="relative mt-14 h-44 w-full max-w-3xl overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] shadow-[0_30px_80px_rgba(0,0,0,0.35)]">
-          <div className="absolute inset-x-6 top-6 bottom-6 flex items-center justify-between gap-3">
-            {[0, 1, 2, 3].map((lane) => (
-              <div key={lane} className="relative flex h-full flex-1 items-center justify-center rounded-[1.5rem] border border-dashed border-white/12">
-                <div className="absolute inset-y-3 left-3 right-3 rounded-[1.25rem] border border-white/6" />
-                <motion.div
-                  animate={{ opacity: [0.3, 0.9, 0.3], scale: [0.98, 1.04, 0.98] }}
-                  transition={{ duration: 1.8, repeat: Infinity, delay: lane * 0.18 }}
-                  className={`h-16 w-10 rounded-2xl ${
-                    lane === 1
-                      ? "bg-[#3a86ff]/35 shadow-[0_0_30px_rgba(58,134,255,0.22)]"
-                      : lane === 2
-                        ? "bg-[#ff7a00]/35 shadow-[0_0_30px_rgba(255,122,0,0.22)]"
-                        : "bg-white/[0.08]"
-                  }`}
-                />
-              </div>
-            ))}
-          </div>
-
-          <motion.div
-            initial={{ x: "-18%" }}
-            animate={{ x: "118%" }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute bottom-7 left-0"
-          >
-            <div className="relative flex h-16 w-28 items-center justify-center rounded-[1.6rem] border border-white/10 bg-gradient-to-r from-[#111827] to-[#1f2937] shadow-[0_20px_40px_rgba(0,0,0,0.45)]">
-              <Car size={28} className="text-[#ffb347]" />
-              <div className="absolute -bottom-3 left-4 h-4 w-4 rounded-full bg-black" />
-              <div className="absolute -bottom-3 right-4 h-4 w-4 rounded-full bg-black" />
-            </div>
-          </motion.div>
-
-          <motion.div
-            animate={{ x: ["-5%", "102%"] }}
-            transition={{ duration: 1.7, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-y-0 w-24 bg-gradient-to-r from-transparent via-white/10 to-transparent blur-xl"
-          />
-        </div>
-
-        <div className="mt-10 w-full max-w-md">
-          <div className="mb-3 flex items-center justify-between text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
-            <span>Parking grid sync</span>
-            <span>Starting</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white/10">
-            <motion.div
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 2.2, ease: "easeInOut" }}
-              className="h-full rounded-full bg-gradient-to-r from-[#ff7a00] via-[#ffb347] to-[#3a86ff]"
-            />
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function LandingSectionHeader({ eyebrow, title, description, align = "left" }) {
-  return (
-    <div className={align === "center" ? "mx-auto max-w-3xl text-center" : "max-w-3xl"}>
-      <div className={`inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs font-bold uppercase tracking-[0.26em] text-gray-400 ${align === "center" ? "justify-center" : ""}`}>
-        <span className="h-2 w-2 rounded-full bg-[#ff7a00]" />
-        {eyebrow}
-      </div>
-      <h2 className="mt-5 text-3xl font-black tracking-tight text-white sm:text-4xl">{title}</h2>
-      <p className={`mt-4 text-sm leading-7 text-gray-400 sm:text-base ${align === "center" ? "mx-auto max-w-2xl" : "max-w-2xl"}`}>{description}</p>
-    </div>
-  );
-}
-
-function GifShowcaseCard({ title, description, accent, type, index }) {
-  const accentCls = accent === "orange"
-    ? "from-[#ff7a00]/25 to-[#ffb347]/8 border-[#ff7a00]/20"
-    : accent === "amber"
-      ? "from-[#ffb347]/22 to-white/0 border-[#ffd27d]/16"
-      : "from-[#3a86ff]/22 to-[#4facfe]/8 border-[#3a86ff]/20";
+function LandingFeatureCard({ title, description, tone }) {
+  const toneClasses = tone === "orange"
+    ? "from-[#ff7a00]/18 to-[#ffb347]/6 border-[#ff7a00]/20"
+    : tone === "amber"
+      ? "from-[#ffb347]/18 to-white/0 border-[#ffb347]/20"
+      : "from-[#3a86ff]/18 to-[#4facfe]/6 border-[#3a86ff]/20";
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 20 }}
+      whileHover={{ y: -6, scale: 1.01 }}
+      className={`rounded-[1.8rem] border bg-gradient-to-br ${toneClasses} p-6 shadow-[0_20px_50px_rgba(0,0,0,0.18)] backdrop-blur-xl`}
+    >
+      <h3 className="text-lg font-bold text-white">{title}</h3>
+      <p className="mt-3 text-sm leading-6 text-gray-400">{description}</p>
+    </motion.article>
+  );
+}
+
+
+
+function MarketingFeatureTile({ icon: Icon, title, description, tone, index }) {
+  const accentCls = tone === "orange"
+    ? "from-[#ff7a00]/20 to-[#ffb347]/5 border-[#ff7a00]/20 text-[#ffbe73]"
+    : tone === "amber"
+      ? "from-[#ffb347]/18 to-white/0 border-[#ffcf8a]/15 text-[#ffd27d]"
+      : "from-[#3a86ff]/18 to-[#4facfe]/5 border-[#3a86ff]/20 text-[#97c3ff]";
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 18 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.42, delay: index * 0.08 }}
-      className={`overflow-hidden rounded-[1.9rem] border bg-gradient-to-br ${accentCls} p-5 shadow-[0_26px_60px_rgba(0,0,0,0.24)]`}
+      transition={{ duration: 0.4, delay: index * 0.06 }}
+      whileHover={{ y: -6 }}
+      className="group rounded-[1.7rem] border border-white/10 bg-[#0b1219]/88 p-6 shadow-[0_26px_55px_rgba(0,0,0,0.22)] transition-all hover:border-white/15"
     >
-      <div className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">
-        {type === "search" && "Live parking radar"}
-        {type === "drive" && "Turn-by-turn guidance"}
-        {type === "verify" && "Commuter verification"}
+      <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl border bg-gradient-to-br ${accentCls}`}>
+        <Icon size={22} />
       </div>
-      <h3 className="mt-3 text-xl font-black text-white">{title}</h3>
+      <h3 className="mt-5 text-lg font-bold text-white">{title}</h3>
       <p className="mt-3 text-sm leading-6 text-gray-400">{description}</p>
-
-      <div className="mt-6 rounded-[1.6rem] border border-white/10 bg-[#09121a]/90 p-4">
-        {type === "search" && (
-          <div className="gif-stage">
-            <div className="gif-radar-ring gif-radar-ring-1" />
-            <div className="gif-radar-ring gif-radar-ring-2" />
-            <div className="gif-radar-ring gif-radar-ring-3" />
-            <div className="gif-radar-sweep" />
-            <div className="gif-center-dot" />
-            <div className="gif-spot gif-spot-1">P</div>
-            <div className="gif-spot gif-spot-2">P</div>
-            <div className="gif-spot gif-spot-3">P</div>
-          </div>
-        )}
-
-        {type === "drive" && (
-          <div className="gif-stage">
-            <div className="gif-road" />
-            <div className="gif-lane lane-1" />
-            <div className="gif-lane lane-2" />
-            <div className="gif-route-glow" />
-            <div className="gif-pin">P</div>
-            <div className="gif-car">
-              <Car size={22} />
-            </div>
-          </div>
-        )}
-
-        {type === "verify" && (
-          <div className="gif-stage">
-            <div className="gif-license-card">
-              <div className="gif-license-top" />
-              <div className="gif-license-line short" />
-              <div className="gif-license-line" />
-              <div className="gif-license-line" />
-              <div className="gif-license-badge" />
-            </div>
-            <div className="gif-scan-line" />
-            <div className="gif-verify-badge">
-              <BadgeCheck size={18} />
-            </div>
-          </div>
-        )}
+      <div className="mt-6 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 transition-colors group-hover:text-white/80">
+        Explore workflow
+        <ArrowRight size={14} />
       </div>
     </motion.article>
   );
 }
 
-function SettingsPage({ session, onSessionChange, onLogout, isDark, toggleDark }) {
+function DashboardPreviewCard({ title, eyebrow, accent, content, index }) {
+  const accentBar = accent === "orange"
+    ? "from-[#ff7a00] to-[#ffb347]"
+    : accent === "amber"
+      ? "from-[#ffb347] to-[#ffd27d]"
+      : "from-[#3a86ff] to-[#4facfe]";
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.45, delay: index * 0.08 }}
+      className="relative overflow-hidden rounded-[1.8rem] border border-white/10 bg-[#0b1219]/88 p-5 shadow-[0_26px_65px_rgba(0,0,0,0.24)]"
+    >
+      <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${accentBar}`} />
+      <div className="text-xs font-bold uppercase tracking-[0.22em] text-gray-500">{eyebrow}</div>
+      <h3 className="mt-3 text-xl font-black text-white">{title}</h3>
+      <div className="mt-5 space-y-3">
+        {content.map((item) => (
+          <div key={item.label} className="flex items-center justify-between rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3">
+            <span className="text-sm text-gray-400">{item.label}</span>
+            <span className="text-sm font-bold text-white">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    </motion.article>
+  );
+}
+
+
+
+function SettingsPage() {
+  const { session, updateSession: onSessionChange, logout: onLogout, isDark, toggleDark } = useAuthStore();
   const [form, setForm] = useState({
     fullName: session.user.fullName || "",
     email: session.user.email || "",
@@ -525,820 +440,20 @@ function SettingsPage({ session, onSessionChange, onLogout, isDark, toggleDark }
   );
 }
 
-function AppNav({ role, page, setPage, user, wallet, onLogout, isDark, toggleDark }) {
-  const hostItems = [
-    { key: "dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
-    { key: "register",  icon: <PlusCircle size={20} />, label: "Register Spot" },
-    { key: "spots",     icon: <LayoutList size={20} />, label: "My Spots" },
-    { key: "earnings",  icon: <Banknote size={20} />, label: "Earnings" },
-    { key: "settings",  icon: <Settings size={20} />, label: "Settings" }
-  ];
-  const guestItems = [
-    { key: "map",     icon: <MapIcon size={20} />, label: "Find Parking" },
-    { key: "history", icon: <History size={20} />, label: "My Bookings" },
-    { key: "wallet",  icon: <Wallet size={20} />, label: "Wallet" },
-    { key: "settings",  icon: <Settings size={20} />, label: "Settings" }
-  ];
-  const items = role === "HOST" ? hostItems : guestItems;
 
-  return (
-    <nav className="app-nav w-full md:w-[260px] shrink-0 bg-[#0f0f0f]/95 backdrop-blur-2xl border-t md:border-t-0 md:border-r border-white/10 flex md:flex-col p-3 md:p-5 h-[76px] md:h-screen fixed md:relative bottom-0 z-50 overflow-x-auto md:overflow-visible">
-      <div className="hidden md:block pb-6 mb-4 border-b border-white/10">
-        <div className="mb-4 flex items-center gap-3">
-          <img src="/applogo.png" alt="ShareSpace logo" className="h-10 w-10 object-contain" />
-          <div className="brand-pill bg-[#ff7a00]/10 text-[#ff7a00] text-xs font-bold px-3 py-1 rounded-full w-fit">ShareSpace</div>
-        </div>
-        <p className="user-name text-white font-bold tracking-tight">{user.fullName}</p>
-        <p className="user-meta text-gray-400 text-xs font-semibold mt-1">{getUserRoleLabel(user)}{getVerificationLabel(user) ? ` · ${getVerificationLabel(user)}` : ""}</p>
-        <p className="wallet-meta text-[#3a86ff] text-sm font-semibold mt-1">{wallet ? formatCurrency(wallet.balance) : "—"}</p>
-      </div>
-      <ul className="flex flex-row md:flex-col gap-1.5 md:gap-2 flex-1 items-center md:items-stretch overflow-x-auto md:overflow-visible my-0 md:my-2 px-2 md:px-0 scrollbar-none">
-        {items.map((item) => {
-          const isActive = page === item.key;
-          return (
-            <li key={item.key} className="flex-shrink-0">
-              <button
-                type="button"
-                className={`nav-item flex items-center flex-col md:flex-row gap-1 md:gap-3 w-[72px] md:w-full p-2 md:px-4 md:py-3 rounded-xl transition-all font-semibold text-[10px] md:text-sm
-                  ${isActive 
-                    ? "active bg-[#3a86ff]/10 text-[#3a86ff] shadow-inner border border-[#3a86ff]/20" 
-                    : "text-gray-400 hover:bg-white/5 hover:text-gray-200 border border-transparent"}`}
-                onClick={() => setPage(item.key)}
-              >
-                <span className="mb-0.5 md:mb-0">{item.icon}</span>
-                <span className="whitespace-nowrap">{item.label}</span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
-}
 
 /* ─── Landmark editor (host) ─── */
-function LandmarkEditor({ landmarks, onChange }) {
-  const add = () =>
-    onChange([...landmarks, { stepNumber: landmarks.length + 1, description: "", latitude: "", longitude: "", showPin: false }]);
 
-  const update = (i, field, value) =>
-    onChange(landmarks.map((l, idx) => (idx === i ? { ...l, [field]: value } : l)));
 
-  const remove = (i) =>
-    onChange(landmarks.filter((_, idx) => idx !== i).map((l, idx) => ({ ...l, stepNumber: idx + 1 })));
 
-  const inputCls = "w-full bg-[#1e1e1e] border border-white/10 rounded-xl py-2 px-3 text-sm font-medium text-white placeholder-gray-500 focus:outline-none focus:border-[#ff7a00] transition-all";
-
-  return (
-    <div className="flex flex-col gap-4 p-5 rounded-2xl bg-[#ff7a00]/5 border border-[#ff7a00]/20">
-      <div>
-        <strong className="text-[#ff7a00] font-bold text-lg flex items-center gap-2"><MapPin size={18}/> Navigation Guide <span className="text-sm font-normal text-gray-500">(optional)</span></strong>
-        <p className="text-gray-400 text-sm mt-1">Add step-by-step directions — shown live as commuters approach each waypoint.</p>
-      </div>
-      <div className="flex flex-col gap-3">
-      {landmarks.map((lm, i) => (
-        <motion.div layout key={i} initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} className="flex flex-col gap-3 p-4 rounded-xl bg-[#121212]/90 border border-white/10 shadow-lg">
-          <div className="flex items-center justify-between">
-            <span className="bg-[#ff7a00] text-white font-bold w-6 h-6 flex items-center justify-center rounded-full text-xs shadow-md shadow-[#ff7a00]/30">{lm.stepNumber}</span>
-            <button type="button" className="text-red-400 hover:bg-red-400/10 p-1 rounded-md transition-colors" onClick={() => remove(i)} title="Remove">✕</button>
-          </div>
-          <textarea
-            className="w-full bg-[#1e1e1e] border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder-gray-500 resize-y focus:outline-none focus:border-[#ff7a00] transition-all"
-            placeholder={`e.g. "Take the third lane left after the petrol pump"`}
-            value={lm.description}
-            onChange={(e) => update(i, "description", e.target.value)}
-            rows={2}
-          />
-          <button type="button" className="text-xs text-gray-400 hover:text-white border border-white/10 rounded-lg py-1.5 px-3 self-start hover:bg-white/5 transition-all w-fit"
-            onClick={() => update(i, "showPin", !lm.showPin)}>
-            {lm.showPin ? "▲ Hide pin coordinates" : "📍 Add optional map pin"}
-          </button>
-          {lm.showPin && (
-            <div className="flex flex-row gap-3">
-              <label className="flex flex-col gap-1 text-xs font-semibold text-gray-400 flex-1">Latitude
-                <input type="number" className={inputCls} value={lm.latitude} onChange={(e) => update(i, "latitude", e.target.value)} placeholder="e.g. 28.6139" />
-              </label>
-              <label className="flex flex-col gap-1 text-xs font-semibold text-gray-400 flex-1">Longitude
-                <input type="number" className={inputCls} value={lm.longitude} onChange={(e) => update(i, "longitude", e.target.value)} placeholder="e.g. 77.2090" />
-              </label>
-            </div>
-          )}
-        </motion.div>
-      ))}
-      </div>
-      <button type="button" className="bg-[#ff7a00]/20 hover:bg-[#ff7a00]/30 text-[#ff7a00] border border-[#ff7a00]/30 rounded-xl py-2.5 text-sm w-full font-bold transition-colors active:scale-95" onClick={add}>
-        + Add navigation step
-      </button>
-    </div>
-  );
-}
-
-function LandmarkGuide({ landmarks, onFocusPoint }) {
-  if (!landmarks || landmarks.length === 0) return null;
-  return (
-    <div className="flex flex-col gap-4 mt-4 bg-[#ff7a00]/5 border border-[#ff7a00]/20 rounded-2xl p-5 mb-4">
-      <strong className="text-[#ff7a00] font-bold flex items-center gap-2"><MapPin size={18}/> Guide to spot</strong>
-      <div className="flex flex-col gap-3">
-        {landmarks.map((lm) => (
-          <div key={lm.id ?? lm.stepNumber} className="flex gap-3 bg-[#121212]/80 border border-white/5 rounded-xl p-3 shadow-inner">
-            <span className="bg-[#ff7a00] text-white font-bold w-6 h-6 flex items-center justify-center rounded-full text-xs shadow-md shadow-[#ff7a00]/30 shrink-0">{lm.stepNumber}</span>
-            <div className="flex flex-col gap-2 w-full">
-              <p className="text-sm text-gray-300 leading-snug">{lm.description}</p>
-              {lm.latitude && lm.longitude ? (
-                <button type="button" className="text-xs text-[#3a86ff] border border-[#3a86ff]/20 bg-[#3a86ff]/10 hover:bg-[#3a86ff]/20 rounded-md py-1 px-3 self-start transition-colors font-semibold shadow-sm flex items-center gap-1"
-                  onClick={() => onFocusPoint({ lat: lm.latitude, lng: lm.longitude })}>
-                  <Navigation2 size={12}/> View pin
-                </button>
-              ) : null}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /* ─── Live proximity alert toast ─── */
-function LandmarkAlert({ alerts, onDismiss }) {
-  if (!alerts.length) return null;
-  return (
-    <div className="alert-stack">
-      {alerts.map((alert) => (
-        <div key={alert.id} className="landmark-alert">
-          <div className="alert-header">
-            <span className="step-badge">{alert.stepNumber}</span>
-            <strong>You're at a navigation point!</strong>
-            <button type="button" className="alert-dismiss" onClick={() => onDismiss(alert.id)}>×</button>
-          </div>
-          <p className="alert-message">{alert.description}</p>
-          <div className="alert-countdown" style={{ "--duration": `${alert.duration}ms` }} />
-        </div>
-      ))}
-    </div>
-  );
-}
+
 
 /* ══════════════════════════════════════════════
    AUTH SCREEN
 ══════════════════════════════════════════════ */
-function AuthScreen({ onAuthenticated }) {
-  const [mode, setMode] = useState("login");
-  const [loginForm, setLoginForm] = useState(emptyLogin);
-  const [registerForm, setRegisterForm] = useState(emptyRegister);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
 
-  const submit = async (path, payload) => {
-    setBusy(true); setError("");
-    try { onAuthenticated(await apiRequest(path, { method: "POST", body: JSON.stringify(payload) })); }
-    catch (e) { setError(e.message); }
-    finally { setBusy(false); }
-  };
-
-  const inputCls = "w-full rounded-2xl border border-white/10 bg-[#0f1720]/88 px-4 py-3.5 text-sm font-medium text-white placeholder-gray-500 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] backdrop-blur-xl transition-all focus:border-[#3a86ff] focus:outline-none focus:ring-1 focus:ring-[#3a86ff]";
-
-  return (
-    <div className="relative min-h-screen overflow-x-hidden overflow-y-auto bg-[#22252a] text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.05),transparent_24%),radial-gradient(circle_at_top_right,rgba(255,164,76,0.12),transparent_24%),linear-gradient(180deg,#2b2f34_0%,#1e2126_48%,#17191d_100%)]" />
-      <div className="absolute inset-0 parking-grid opacity-[0.08]" />
-      <div className="absolute inset-0 asphalt-noise opacity-60" />
-      <div className="absolute inset-0 parking-signs opacity-40" />
-      <div className="pointer-events-none absolute -top-20 left-[12%] h-72 w-72 rounded-full bg-white/6 blur-[110px]" />
-      <div className="pointer-events-none absolute right-[10%] top-[28%] h-72 w-72 rounded-full bg-[#ff7a00]/10 blur-[120px]" />
-
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-        <motion.header
-          initial={{ opacity: 0, y: -18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="mb-8 flex items-start justify-start"
-        >
-          <div className="flex items-center gap-3">
-            <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-[0_10px_30px_rgba(255,122,0,0.18)]">
-              <img src="/applogo.png" alt="ShareSpace logo" className="h-10 w-10 object-cover" />
-            </div>
-            <div>
-              <strong className="block text-sm font-black uppercase tracking-[0.22em] text-white">ShareSpace</strong>
-              <span className="text-xs text-gray-400">Parking marketplace for India</span>
-            </div>
-          </div>
-        </motion.header>
-
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
-          <motion.section
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55 }}
-            className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-white/[0.03] px-6 py-8 backdrop-blur-2xl sm:px-8 lg:px-10"
-          >
-            <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.05),transparent_42%)]" />
-            <div className="relative z-10">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#ff7a00]/20 bg-[#ff7a00]/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.28em] text-[#ffb86b]">
-                <Navigation2 size={14} />
-                Urban Mobility | Smart Parking
-              </div>
-
-              <h1 className="max-w-4xl text-4xl font-black leading-[1.02] tracking-tight text-white sm:text-5xl lg:text-6xl">
-                Find better parking, unlock commuter perks, and run host operations from one premium grid.
-              </h1>
-
-              <p className="mt-6 max-w-2xl text-base leading-7 text-gray-400 sm:text-lg">
-                This ShareSpace front door now feels more cinematic and product-led while still connecting directly into your real login, booking, wallet, and host workflows.
-              </p>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => setMode("register")}
-                  className="group inline-flex items-center justify-center rounded-2xl bg-gradient-to-r from-[#ff7a00] to-[#ffb347] px-6 py-4 text-sm font-black text-[#081019] shadow-[0_18px_45px_rgba(255,122,0,0.3)] transition-transform hover:-translate-y-0.5"
-                >
-                  Create account
-                  <span className="ml-2 transition-transform group-hover:translate-x-1">→</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode("login")}
-                  className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-bold text-white backdrop-blur-xl transition-all hover:border-white/20 hover:bg-white/[0.07]"
-                >
-                  Sign in to continue
-                </button>
-              </div>
-
-              <div className="mt-10 grid gap-4 sm:grid-cols-3">
-                {marketingStats.map((stat, index) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.35, delay: 0.2 + index * 0.08 }}
-                    className="rounded-[1.4rem] border border-white/10 bg-[#09131c]/75 p-5 shadow-[0_20px_45px_rgba(0,0,0,0.2)]"
-                  >
-                    <div className="text-3xl font-black text-white">{stat.value}</div>
-                    <div className="mt-2 text-sm text-gray-400">{stat.label}</div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.section>
-
-          <motion.section
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.08 }}
-            className="rounded-[2rem] border border-white/10 bg-[#0b1219]/88 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.28)] backdrop-blur-3xl sm:p-8"
-          >
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <div className="text-xs font-bold uppercase tracking-[0.26em] text-gray-500">Access ShareSpace</div>
-                <h2 className="mt-2 text-3xl font-black text-white">{mode === "login" ? "Welcome back" : "Create your parking profile"}</h2>
-              </div>
-              <div className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs font-semibold text-gray-400">
-                {mode === "login" ? "Secure sign in" : "Tourist, commuter, host"}
-              </div>
-            </div>
-
-            <div className="mb-8 flex rounded-2xl border border-white/8 bg-[#0f1720]/85 p-1.5">
-              <button type="button" className={`flex-1 rounded-2xl py-3 text-sm font-bold transition-all ${mode === "login" ? "bg-[#3a86ff] text-white shadow-[0_10px_26px_rgba(58,134,255,0.28)]" : "text-gray-400 hover:text-white"}`} onClick={() => setMode("login")}>Login</button>
-              <button type="button" className={`flex-1 rounded-2xl py-3 text-sm font-bold transition-all ${mode === "register" ? "bg-[#ff7a00] text-white shadow-[0_10px_26px_rgba(255,122,0,0.28)]" : "text-gray-400 hover:text-white"}`} onClick={() => setMode("register")}>Register</button>
-            </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div key={mode} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.24 }}>
-                {mode === "login" ? (
-                  <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); submit("/auth/login", loginForm); }}>
-                    <label className="flex flex-col gap-2 text-sm font-semibold text-gray-300">Email
-                      <input className={inputCls} value={loginForm.email} onChange={(e) => setLoginForm((c) => ({ ...c, email: e.target.value }))} placeholder="Enter your email" />
-                    </label>
-                    <label className="flex flex-col gap-2 text-sm font-semibold text-gray-300">Password
-                      <input className={inputCls} type="password" value={loginForm.password} onChange={(e) => setLoginForm((c) => ({ ...c, password: e.target.value }))} placeholder="Enter your password" />
-                    </label>
-                    {error && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">{error}</p>}
-                    <button type="submit" className="mt-3 rounded-2xl bg-gradient-to-r from-[#3a86ff] to-[#4facfe] px-6 py-4 text-sm font-black text-white shadow-[0_18px_42px_rgba(58,134,255,0.26)] transition-transform hover:-translate-y-0.5 disabled:opacity-60" disabled={busy}>
-                      {busy ? "Signing in..." : "Sign in to dashboard"}
-                    </button>
-                  </form>
-                ) : (
-                  <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); submit("/auth/register", registerForm); }}>
-                    <label className="flex flex-col gap-2 text-sm font-semibold text-gray-300">Full name
-                      <input className={inputCls} value={registerForm.fullName} onChange={(e) => setRegisterForm((c) => ({ ...c, fullName: e.target.value }))} placeholder="Your full name" />
-                    </label>
-                    <label className="flex flex-col gap-2 text-sm font-semibold text-gray-300">Email
-                      <input className={inputCls} value={registerForm.email} onChange={(e) => setRegisterForm((c) => ({ ...c, email: e.target.value }))} placeholder="your@email.com" />
-                    </label>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <label className="flex flex-col gap-2 text-sm font-semibold text-gray-300">Phone
-                        <input className={inputCls} value={registerForm.phone} onChange={(e) => setRegisterForm((c) => ({ ...c, phone: e.target.value }))} placeholder="+91..." />
-                      </label>
-                      <label className="flex flex-col gap-2 text-sm font-semibold text-gray-300">Role
-                        <select className={`${inputCls} appearance-none`} value={registerForm.role} onChange={(e) => setRegisterForm((c) => ({ ...c, role: e.target.value }))}>
-                          <option value="TOURIST" className="bg-[#101822]">Tourist</option>
-                          <option value="COMMUTER" className="bg-[#101822]">Commuter</option>
-                          <option value="HOST" className="bg-[#101822]">Host</option>
-                        </select>
-                      </label>
-                    </div>
-                    {registerForm.role !== "HOST" && (
-                      <p className="rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-3 text-xs font-medium leading-6 text-gray-400">
-                        Tourists can start booking instantly. Commuters can submit their driving license later in Settings to unlock the verified commuter discount.
-                      </p>
-                    )}
-                    <label className="flex flex-col gap-2 text-sm font-semibold text-gray-300">Password
-                      <input className={inputCls} type="password" value={registerForm.password} onChange={(e) => setRegisterForm((c) => ({ ...c, password: e.target.value }))} placeholder="Choose a password" />
-                    </label>
-                    {error && <p className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">{error}</p>}
-                    <button type="submit" className="mt-3 rounded-2xl bg-gradient-to-r from-[#ff7a00] to-[#ffb347] px-6 py-4 text-sm font-black text-[#081019] shadow-[0_18px_42px_rgba(255,122,0,0.28)] transition-transform hover:-translate-y-0.5 disabled:opacity-60" disabled={busy}>
-                      {busy ? "Creating..." : "Create account"}
-                    </button>
-                  </form>
-                )}
-              </motion.div>
-            </AnimatePresence>
-
-            <div className="mt-8 grid gap-3">
-              {landingSteps.map((step, index) => (
-                <motion.div
-                  key={step.role}
-                  initial={{ opacity: 0, x: 12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.18 + index * 0.06 }}
-                  className="rounded-[1.4rem] border border-white/8 bg-white/[0.03] px-4 py-4"
-                >
-                  <div className="text-sm font-bold text-white">{step.role}</div>
-                  <p className="mt-1 text-sm leading-6 text-gray-400">{step.detail}</p>
-                </motion.div>
-              ))}
-            </div>
-          </motion.section>
-        </div>
-
-        <section className="mt-24">
-          <LandingSectionHeader
-            eyebrow="How ShareSpace works"
-            title="From discovery to destination - every step, seamlessly guided"
-            description="Search live spots on the radar, follow a glowing route to your bay, and get verified as a commuter. Three flows, zero friction."
-            align="center"
-          />
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {gifShowcaseCards.map((card, index) => (
-              <GifShowcaseCard key={card.title} index={index} {...card} />
-            ))}
-          </div>
-        </section>
-
-        <motion.section
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.45 }}
-          className="relative mt-24 overflow-hidden rounded-[2.4rem] border border-white/10 bg-[linear-gradient(135deg,rgba(58,134,255,0.14),rgba(255,122,0,0.12))] px-6 py-10 shadow-[0_32px_90px_rgba(0,0,0,0.28)] sm:px-10"
-        >
-          <div className="absolute inset-0 parking-grid opacity-[0.08]" />
-          <div className="relative flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.08] px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-white/75">
-                <Car size={14} />
-                Ready to launch
-              </div>
-              <h2 className="mt-5 text-3xl font-black tracking-tight text-white sm:text-4xl">Step into ShareSpace with a homepage that feels alive, premium, and product-driven.</h2>
-              <p className="mt-4 max-w-xl text-sm leading-7 text-white/72 sm:text-base">
-                Use the cinematic landing flow to pull in tourists, commuters, and hosts, then move them directly into the same real app they already use.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={() => setMode("register")}
-                className="inline-flex items-center justify-center rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#081019] transition-transform hover:-translate-y-0.5"
-              >
-                Start with registration
-              </button>
-              <button
-                type="button"
-                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/[0.05] px-6 py-4 text-sm font-bold text-white"
-              >
-                Back to hero
-              </button>
-            </div>
-          </div>
-        </motion.section>
-
-        <footer className="mt-16 border-t border-white/10 pb-8 pt-8">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-sm">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#ff7a00] to-[#ffb347] text-[#081019] shadow-[0_12px_30px_rgba(255,122,0,0.28)]">
-                  <Car size={20} />
-                </div>
-                <div>
-                  <strong className="block text-sm font-black uppercase tracking-[0.22em] text-white">ShareSpace</strong>
-                  <span className="text-xs text-gray-500">Smart parking marketplace</span>
-                </div>
-              </div>
-              <p className="mt-4 text-sm leading-7 text-gray-400">
-                A richer homepage merged into the working ShareSpace app without losing live auth, wallet, booking, and host flows.
-              </p>
-            </div>
-            <div className="grid gap-8 sm:grid-cols-3">
-              <div>
-                <div className="text-sm font-bold text-white">Product</div>
-                <div className="mt-4 space-y-3 text-sm text-gray-400">
-                  <div>Find Parking</div>
-                  <div>Host a Spot</div>
-                  <div>Commuter Verification</div>
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-bold text-white">Experience</div>
-                <div className="mt-4 space-y-3 text-sm text-gray-400">
-                  <div>Wallet Payments</div>
-                  <div>Booking History</div>
-                  <div>Map Guidance</div>
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-bold text-white">Audience</div>
-                <div className="mt-4 space-y-3 text-sm text-gray-400">
-                  <div>Tourists</div>
-                  <div>Commuters</div>
-                  <div>Hosts</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </div>
-  );
-}
-
-function AdminDashboard({ session, onLogout }) {
-  const [page, setPage] = useState("overview");
-  const [overview, setOverview] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [spots, setSpots] = useState([]);
-  const [bookings, setBookings] = useState([]);
-  const [wallets, setWallets] = useState([]);
-  const [verifications, setVerifications] = useState([]);
-  const [selectedAdminUserId, setSelectedAdminUserId] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [status, setStatus] = useState("");
-
-  const adminItems = [
-    { key: "overview", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
-    { key: "users", label: "Users", icon: <Users size={18} /> },
-    { key: "spots", label: "Parking Spots", icon: <ParkingCircle size={18} /> },
-    { key: "bookings", label: "Bookings", icon: <History size={18} /> },
-    { key: "verifications", label: "Verification Docs", icon: <FileCheck2 size={18} /> }
-  ];
-
-  const selectedAdminUser = users.find((user) => user.id === selectedAdminUserId) || null;
-  const selectedAdminUserWallet = selectedAdminUser
-    ? wallets.find((wallet) => wallet.userId === selectedAdminUser.id)
-    : null;
-
-  const loadAdminData = useCallback(async () => {
-    setBusy(true);
-    setError("");
-    try {
-      const [overviewData, usersData, spotsData, bookingsData, walletsData, verificationData] = await Promise.all([
-        apiRequest("/admin/overview"),
-        apiRequest("/admin/users"),
-        apiRequest("/admin/spots"),
-        apiRequest("/admin/bookings"),
-        apiRequest("/admin/wallets"),
-        apiRequest("/admin/license-verifications")
-      ]);
-      setOverview(overviewData);
-      setUsers(usersData);
-      setSpots(spotsData);
-      setBookings(bookingsData);
-      setWallets(walletsData);
-      setVerifications(verificationData);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  }, []);
-
-  useEffect(() => { loadAdminData(); }, [loadAdminData]);
-
-  const updateVerification = async (userId, verificationStatus) => {
-    setStatus("");
-    setError("");
-    try {
-      await apiRequest(`/admin/users/${userId}/verification-status`, {
-        method: "PATCH",
-        body: JSON.stringify({ status: verificationStatus })
-      });
-      setStatus(`User #${userId} marked ${verificationStatus}.`);
-      await loadAdminData();
-    } catch (e) {
-      setError(e.message);
-    }
-  };
-
-  const toggleSpot = async (spotId) => {
-    setStatus("");
-    setError("");
-    try {
-      await apiRequest(`/admin/spots/${spotId}/toggle-status`, { method: "PATCH" });
-      setStatus(`Spot #${spotId} status updated.`);
-      await loadAdminData();
-    } catch (e) {
-      setError(e.message);
-    }
-  };
-
-  const deleteSpot = async (spotId, title) => {
-    if (!window.confirm(`Delete "${title}"? This permanently removes the spot.`)) return;
-    setStatus("");
-    setError("");
-    try {
-      await apiRequest(`/admin/spots/${spotId}`, { method: "DELETE" });
-      setStatus(`Deleted spot #${spotId}.`);
-      await loadAdminData();
-    } catch (e) {
-      setError(e.message);
-    }
-  };
-
-  const deleteUser = async (user) => {
-    if (!window.confirm(`Delete ${user.fullName}? This also removes their wallet, verification data, bookings, and hosted spots.`)) return;
-    setStatus("");
-    setError("");
-    try {
-      await apiRequest(`/admin/users/${user.id}`, { method: "DELETE" });
-      setSelectedAdminUserId(null);
-      setStatus(`Deleted ${user.fullName}.`);
-      await loadAdminData();
-    } catch (e) {
-      setError(e.message);
-    }
-  };
-
-  const StatCard = ({ label, value, icon, accent = "text-[#3a86ff]" }) => (
-    <section className="rounded-2xl border border-white/10 bg-[#121212]/95 p-5 shadow-xl">
-      <div className="flex items-center justify-between gap-4">
-        <span className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">{label}</span>
-        <span className={`rounded-xl border border-white/10 bg-white/5 p-2 ${accent}`}>{icon}</span>
-      </div>
-      <div className="mt-4 text-3xl font-black text-white">{value}</div>
-    </section>
-  );
-
-  const Empty = ({ message }) => (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-sm font-semibold text-gray-500">
-      {message}
-    </div>
-  );
-
-  return (
-    <div className="flex min-h-screen bg-[#080a0d] text-white">
-      <aside className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-[#0f0f0f]/95 p-3 backdrop-blur-2xl md:static md:inset-auto md:flex md:h-screen md:w-[280px] md:shrink-0 md:flex-col md:border-r md:border-t-0 md:p-5">
-        <div className="hidden border-b border-white/10 pb-5 md:block">
-          <div className="flex items-center gap-3">
-            <img src="/applogo.png" alt="ShareSpace logo" className="h-10 w-10 object-contain" />
-            <div>
-              <strong className="block text-sm font-black uppercase tracking-[0.2em] text-white">Admin</strong>
-              <span className="text-xs font-semibold text-gray-500">ShareSpace control</span>
-            </div>
-          </div>
-          <p className="mt-5 text-sm font-bold text-white">{session.user.fullName}</p>
-          <p className="text-xs text-gray-500">{session.user.email}</p>
-        </div>
-
-        <nav className="flex gap-2 overflow-x-auto md:mt-5 md:flex-col md:overflow-visible">
-          {adminItems.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              onClick={() => setPage(item.key)}
-              className={`flex min-h-[44px] shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold transition-all md:w-full md:px-4 md:text-sm ${
-                page === item.key
-                  ? "border-[#ff7a00]/30 bg-[#ff7a00]/15 text-[#ffb347]"
-                  : "border-transparent text-gray-400 hover:border-white/10 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              {item.icon}
-              <span className="whitespace-nowrap">{item.label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <button
-          type="button"
-          className="mt-auto hidden items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-red-300 transition-all hover:bg-red-500/10 md:flex"
-          onClick={onLogout}
-        >
-          <LogOut size={18} />
-          Log out
-        </button>
-      </aside>
-
-      <main className="flex-1 overflow-y-auto pb-28 md:pb-0">
-        <header className="sticky top-0 z-30 border-b border-white/10 bg-[#080a0d]/82 px-5 py-4 backdrop-blur-2xl md:px-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#ffb347]">ShareSpace Admin</p>
-              <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">Admin Dashboard</h1>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={loadAdminData} className="flex min-h-[44px] items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-gray-200 hover:bg-white/10">
-                <RefreshCw size={16} className={busy ? "animate-spin" : ""} />
-                Refresh
-              </button>
-              <button type="button" onClick={onLogout} className="flex min-h-[44px] items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm font-bold text-red-300 hover:bg-red-500/15 md:hidden">
-                <LogOut size={16} />
-                Log out
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-5 md:p-8">
-          {error && <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-300">{error}</div>}
-          {status && <div className="rounded-xl border border-[#3a86ff]/20 bg-[#3a86ff]/10 px-4 py-3 text-sm font-bold text-[#8eb7ff]">{status}</div>}
-
-          {page === "overview" && (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Users" value={overview?.totalUsers ?? 0} icon={<Users size={18} />} />
-                <StatCard label="Active Spots" value={`${overview?.activeSpots ?? 0}/${overview?.totalSpots ?? 0}`} icon={<ParkingCircle size={18} />} accent="text-[#ffb347]" />
-                <StatCard label="Bookings" value={overview?.totalBookings ?? 0} icon={<History size={18} />} />
-                <StatCard label="Pending Verification" value={overview?.pendingVerifications ?? 0} icon={<FileCheck2 size={18} />} accent="text-[#ffb347]" />
-              </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <StatCard label="Total Booking Value" value={formatCurrency(overview?.totalBookingValue ?? 0)} icon={<BarChart3 size={18} />} />
-                <StatCard label="Wallet Balance In System" value={formatCurrency(overview?.totalWalletBalance ?? 0)} icon={<Wallet size={18} />} accent="text-[#ffb347]" />
-              </div>
-            </>
-          )}
-
-          {page === "users" && (
-            <AdminTable title="Users Management">
-              {selectedAdminUser ? (
-                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-                  <button type="button" className="mb-5 text-sm font-bold text-[#8eb7ff] hover:text-white" onClick={() => setSelectedAdminUserId(null)}>
-                    ← Back to all users
-                  </button>
-                  <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-                    <div>
-                      <h3 className="text-2xl font-black text-white">{selectedAdminUser.fullName}</h3>
-                      <p className="mt-2 text-sm text-gray-400">{selectedAdminUser.email}</p>
-                      <p className="mt-1 text-sm text-gray-400">{selectedAdminUser.phone}</p>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <Badge>{selectedAdminUser.role}</Badge>
-                        <Badge>{selectedAdminUser.verificationStatus}</Badge>
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-[#0b0b0b] p-5">
-                      <span className="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Wallet</span>
-                      <div className="mt-3 text-3xl font-black text-[#3a86ff]">
-                        {selectedAdminUserWallet ? formatCurrency(selectedAdminUserWallet.balance) : "No wallet"}
-                      </div>
-                      {selectedAdminUserWallet?.updatedAt && (
-                        <p className="mt-2 text-xs text-gray-500">Updated {new Date(selectedAdminUserWallet.updatedAt).toLocaleString()}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-6 flex flex-wrap gap-3 border-t border-white/10 pt-5">
-                    {selectedAdminUser.role === "COMMUTER" && (
-                      <>
-                        <SmallAction onClick={() => updateVerification(selectedAdminUser.id, "VERIFIED")}>Approve verification</SmallAction>
-                        <SmallAction danger onClick={() => updateVerification(selectedAdminUser.id, "REJECTED")}>Reject verification</SmallAction>
-                      </>
-                    )}
-                    <SmallAction danger onClick={() => deleteUser(selectedAdminUser)}><Trash2 size={14} /> Delete user</SmallAction>
-                  </div>
-                </div>
-              ) : users.length ? users.map((user) => (
-                <AdminRow key={user.id} onClick={() => setSelectedAdminUserId(user.id)}>
-                  <div>
-                    <strong className="text-white">{user.fullName}</strong>
-                    <p className="text-xs text-gray-500">{user.email} · {user.phone}</p>
-                  </div>
-                  <Badge>{user.role}</Badge>
-                  <Badge>{user.verificationStatus}</Badge>
-                  <span className="text-xs font-semibold text-[#8eb7ff]">Open profile →</span>
-                </AdminRow>
-              )) : <Empty message="No users found." />}
-            </AdminTable>
-          )}
-
-          {page === "spots" && (
-            <AdminTable title="Parking Spots">
-              {spots.length ? spots.map((spot) => (
-                <AdminRow key={spot.id}>
-                  <div>
-                    <strong className="text-white">{spot.title}</strong>
-                    <p className="text-xs text-gray-500">{spot.address}</p>
-                    <p className="text-xs text-gray-500">Host: {spot.hostName}</p>
-                  </div>
-                  <Badge>{spot.isActive ? "ACTIVE" : "PAUSED"}</Badge>
-                  <span className="font-bold text-[#3a86ff]">{formatCurrency(spot.hourlyRate)}/hr</span>
-                  <div className="flex flex-wrap gap-2">
-                    <SmallAction onClick={() => toggleSpot(spot.id)}>{spot.isActive ? "Pause" : "Activate"}</SmallAction>
-                    <SmallAction danger onClick={() => deleteSpot(spot.id, spot.title)}><Trash2 size={14} /> Delete</SmallAction>
-                  </div>
-                </AdminRow>
-              )) : <Empty message="No spots found." />}
-            </AdminTable>
-          )}
-
-          {page === "bookings" && (
-            <AdminTable title="Bookings & Transactions">
-              {bookings.length ? bookings.map((booking) => (
-                <AdminRow key={booking.id}>
-                  <div>
-                    <strong className="text-white">{booking.spotTitle}</strong>
-                    <p className="text-xs text-gray-500">Guest: {booking.guestName} · Host: {booking.hostName}</p>
-                  </div>
-                  <Badge>{booking.status}</Badge>
-                  <span className="font-bold text-[#3a86ff]">{formatCurrency(booking.totalAmount)}</span>
-                  <span className="text-xs text-gray-500">Host payout {formatCurrency(booking.hostPayoutAmount ?? booking.totalAmount)}</span>
-                </AdminRow>
-              )) : <Empty message="No bookings found." />}
-            </AdminTable>
-          )}
-
-          {page === "verifications" && (
-            <AdminTable title="Verification Documents">
-              {verifications.length ? verifications.map((item) => (
-                <AdminRow key={item.id}>
-                  <div>
-                    <strong className="text-white">{item.userName}</strong>
-                    <p className="text-xs text-gray-500">{item.userEmail}</p>
-                    <p className="text-xs text-gray-500">DL: {item.licenseNumberMasked}</p>
-                  </div>
-                  <Badge>{item.status}</Badge>
-                  <span className="text-xs text-gray-500">Submitted {new Date(item.submittedAt).toLocaleString()}</span>
-                  <div className="flex flex-wrap gap-2">
-                    <SmallAction onClick={() => updateVerification(item.userId, "VERIFIED")}>Approve</SmallAction>
-                    <SmallAction danger onClick={() => updateVerification(item.userId, "REJECTED")}>Reject</SmallAction>
-                  </div>
-                </AdminRow>
-              )) : <Empty message="No verification submissions found." />}
-            </AdminTable>
-          )}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function AdminTable({ title, children }) {
-  return (
-    <section className="rounded-2xl border border-white/10 bg-[#121212]/95 p-4 shadow-xl sm:p-6">
-      <h2 className="mb-4 text-xl font-black text-white">{title}</h2>
-      <div className="flex flex-col gap-3">{children}</div>
-    </section>
-  );
-}
-
-function AdminRow({ children, onClick }) {
-  const Component = onClick ? "button" : "article";
-  return (
-    <Component
-      type={onClick ? "button" : undefined}
-      onClick={onClick}
-      className={`grid w-full gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left text-sm md:grid-cols-[1.5fr_0.7fr_0.8fr_1fr] md:items-center ${
-        onClick ? "transition-all hover:border-[#ff7a00]/30 hover:bg-[#ff7a00]/5" : ""
-      }`}
-    >
-      {children}
-    </Component>
-  );
-}
-
-function Badge({ children }) {
-  return (
-    <span className="w-fit rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-bold text-gray-300">
-      {children}
-    </span>
-  );
-}
-
-function SmallAction({ children, danger = false, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.stopPropagation();
-        onClick?.(event);
-      }}
-      className={`inline-flex min-h-[36px] items-center justify-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-bold transition-all ${
-        danger
-          ? "border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/15"
-          : "border-[#3a86ff]/20 bg-[#3a86ff]/10 text-[#8eb7ff] hover:bg-[#3a86ff]/15"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
 
 /* ══════════════════════════════════════════════
    HOST DASHBOARD
@@ -2136,9 +1251,7 @@ export default function App() {
     );
   }
 
-  return session.user.role === "ADMIN"
-    ? <AdminDashboard session={session} onLogout={logout} />
-    : session.user.role === "HOST"
+  return session.user.role === "HOST"
     ? <HostDashboard session={session} onSessionChange={updateSession} onLogout={logout} isLoaded={isLoaded} loadError={loadError} isDark={isDark} toggleDark={toggleDark} />
     : <CustomerDashboard session={session} onSessionChange={updateSession} onLogout={logout} isLoaded={isLoaded} loadError={loadError} isDark={isDark} toggleDark={toggleDark} />;
 }
