@@ -32,4 +32,4 @@ function ListItem({ children, active, asButton = false, onClick }) {
   return <motion.article layout className={cls}>{Content}</motion.article>;
 }
 
-export default ListItem;
+export default React.memo(ListItem);

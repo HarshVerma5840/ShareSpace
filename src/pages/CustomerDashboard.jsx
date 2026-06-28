@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Navigation2, Search, MapPin, ShieldAlert, LogOut, Clock3, CreditCard } from "lucide-react";
 import { apiRequest } from "../utils/api";
@@ -14,6 +14,8 @@ import MapContainer from "../components/map/MapContainer";
 import MapMarker from "../components/map/MapMarker";
 import MapRoute from "../components/map/MapRoute";
 
+import useDashboardStore from "../stores/dashboardStore";
+import useMapStore from "../stores/mapStore";
 function CustomerDashboard({ session, onSessionChange, onLogout, isDark, toggleDark }) {
   const [wallet, setWallet] = useState(session.wallet);
   const [spots, setSpots] = useState([]);

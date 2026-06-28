@@ -20,4 +20,4 @@ function WalletCard({ wallet, onTopUp }) {
   );
 }
 
-export default WalletCard;
+export default React.memo(WalletCard);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "motion/react";
 import { Car, MapPin, ShieldAlert, LogOut, Moon, Sun, History, Wallet, LayoutDashboard, PlusCircle, LayoutList, Banknote, ListPlus, Map as MapIcon, ArrowRight, Plane, Building2, BadgeCheck, CreditCard, Clock3 } from "lucide-react";
 import { apiRequest } from "../utils/api";
@@ -16,6 +16,7 @@ const buildAddress = (form) =>
   [form.addressLine1, form.addressLine2, form.landmark, form.city, form.state, form.postalCode, "India"]
     .map((p) => p.trim()).filter(Boolean).join(", ");
 
+import useDashboardStore from "../stores/dashboardStore";
 function HostDashboard({ session, onSessionChange, onLogout, isDark, toggleDark }) {
   const [wallet, setWallet] = useState(session.wallet);
   const [spots, setSpots] = useState([]);

@@ -3,7 +3,7 @@ import { GoogleMap } from '@react-google-maps/api';
 import { useMapData } from './MapProvider';
 import { mapOptions, indiaCenter } from '../../utils/mapUtils';
 
-export default function MapContainer({
+function MapContainer({
   center,
   zoom,
   onClick,
@@ -44,3 +44,5 @@ export default function MapContainer({
     </GoogleMap>
   );
 }
+
+export default React.memo(MapContainer);

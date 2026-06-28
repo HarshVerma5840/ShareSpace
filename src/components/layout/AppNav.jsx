@@ -62,4 +62,4 @@ function AppNav() {
   );
 }
 
-export default AppNav;
+export default React.memo(AppNav);
