@@ -7,6 +7,10 @@ import com.sharespace.backend.user.UserRole;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,8 +40,11 @@ public class SpotService {
         spot.setTitle(request.title());
         spot.setAddress(request.address());
         spot.setAvailabilityWindow(request.availabilityWindow());
-        spot.setLatitude(request.latitude());
-        spot.setLongitude(request.longitude());
+        
+        GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
+        Point location = geometryFactory.createPoint(new Coordinate(request.longitude(), request.latitude()));
+        spot.setLocation(location);
+        
         spot.setHourlyRate(request.hourlyRate());
         spot.setSlotType(request.slotType());
         spot.setCovered(request.covered());
@@ -60,9 +67,16 @@ public class SpotService {
 
     @Transactional(readOnly = true)
     public List<SpotResponse> findSpots(Double latitude, Double longitude, Double radiusKm) {
-        return spotRepository.findAllByOrderByCreatedAtDesc().stream()
+        if (latitude == null || longitude == null) {
+            return spotRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(spot -> SpotResponse.from(spot, null))
+                .toList();
+        }
+        
+        double radiusMeters = (radiusKm != null ? radiusKm : 5.0) * 1000.0;
+        
+        return spotRepository.findSpotsWithinDistance(latitude, longitude, radiusMeters).stream()
             .map(spot -> SpotResponse.from(spot, calculateDistance(latitude, longitude, spot)))
-            .filter(spot -> radiusKm == null || spot.distanceKm() == null || spot.distanceKm() <= radiusKm)
             .sorted(Comparator.comparing(
                 spot -> spot.distanceKm() == null ? Double.MAX_VALUE : spot.distanceKm()
             ))
@@ -111,10 +125,10 @@ public class SpotService {
         }
 
         double earthRadiusKm = 6371.0;
-        double latitudeDelta = Math.toRadians(spot.getLatitude() - latitude);
-        double longitudeDelta = Math.toRadians(spot.getLongitude() - longitude);
+        double latitudeDelta = Math.toRadians(spot.getLocation().getY() - latitude);
+        double longitudeDelta = Math.toRadians(spot.getLocation().getX() - longitude);
         double originLatitude = Math.toRadians(latitude);
-        double destinationLatitude = Math.toRadians(spot.getLatitude());
+        double destinationLatitude = Math.toRadians(spot.getLocation().getY());
 
         double haversine = Math.sin(latitudeDelta / 2) * Math.sin(latitudeDelta / 2)
             + Math.cos(originLatitude) * Math.cos(destinationLatitude)
