@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import org.locationtech.jts.geom.Point;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -34,11 +35,8 @@ public class Spot {
     @Column(nullable = false, length = 120)
     private String availabilityWindow;
 
-    @Column(nullable = false)
-    private Double latitude;
-
-    @Column(nullable = false)
-    private Double longitude;
+    @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
+    private Point location;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal hourlyRate;
@@ -90,20 +88,12 @@ public class Spot {
         this.availabilityWindow = availabilityWindow;
     }
 
-    public Double getLatitude() {
-        return latitude;
+    public Point getLocation() {
+        return location;
     }
 
-    public void setLatitude(Double latitude) {
-        this.latitude = latitude;
-    }
-
-    public Double getLongitude() {
-        return longitude;
-    }
-
-    public void setLongitude(Double longitude) {
-        this.longitude = longitude;
+    public void setLocation(Point location) {
+        this.location = location;
     }
 
     public BigDecimal getHourlyRate() {
