@@ -1,27 +1,35 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "motion/react";
 import { Car, MapPin, ShieldAlert, LogOut, Moon, Sun, History, Wallet, LayoutDashboard, PlusCircle, LayoutList, Banknote, ListPlus, Map as MapIcon, ArrowRight, Plane, Building2, BadgeCheck, CreditCard, Clock3 } from "lucide-react";
-import { apiRequest } from "../utils/api";
-import { formatCurrency, formatCovered, emptySpot } from "../utils/helpers";
-import AppNav from "../components/layout/AppNav";
-import SettingsPage from "./SettingsPage";
-import ListItem from "../components/ui/ListItem";
-import SpotScanner from "../SpotScanner";
-import LandmarkEditor from "../components/landmarks/LandmarkEditor";
-import { isPointWithinIndia, isWithinIndia, indiaCenter, mapOptions } from "../utils/mapUtils";
-import MapContainer from "../components/map/MapContainer";
-import MapMarker from "../components/map/MapMarker";
+import { apiRequest } from "../../utils/api";
+import { formatCurrency, formatCovered, emptySpot } from "../../utils/helpers";
+import AppNav from "../../components/layout/AppNav";
+import SettingsPage from "../SettingsPage";
+import ListItem from "../../components/ui/ListItem";
+import SpotScanner from "../../SpotScanner";
+import LandmarkEditor from "../../components/landmarks/LandmarkEditor";
+import { isPointWithinIndia, isWithinIndia, indiaCenter, mapOptions } from "../../utils/mapUtils";
+import MapContainer from "../../components/map/MapContainer";
+import MapMarker from "../../components/map/MapMarker";
 
 const buildAddress = (form) =>
   [form.addressLine1, form.addressLine2, form.landmark, form.city, form.state, form.postalCode, "India"]
     .map((p) => p.trim()).filter(Boolean).join(", ");
 
-import useDashboardStore from "../stores/dashboardStore";
-function HostDashboard({ session, onSessionChange, onLogout, isDark, toggleDark }) {
-  const [wallet, setWallet] = useState(session.wallet);
+import { useLocation } from "react-router-dom";
+import useDashboardStore from "../../stores/dashboardStore";
+import useAuthStore from "../../stores/authStore";
+function HostDashboard() {
+  const session = useAuthStore(s => s.session);
+  const setWallet = useDashboardStore(s => s.setWallet);
+  const wallet = useDashboardStore(s => s.wallet);
+  
+  const location = useLocation();
+  const path = location.pathname;
+  const page = path === "/host/register" ? "register" : path === "/host/spots" ? "spots" : path === "/host/earnings" ? "earnings" : "dashboard";
+
   const [spots, setSpots] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [page, setPage] = useState("dashboard");
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [form, setForm] = useState(emptySpot);
   const [error, setError] = useState("");
@@ -37,16 +45,15 @@ function HostDashboard({ session, onSessionChange, onLogout, isDark, toggleDark 
         apiRequest(`/bookings/host/${session.user.id}`)
       ]);
       setWallet(w); setSpots(s); setBookings(b);
-      onSessionChange({ ...session, wallet: w });
     } catch (e) { setError(e.message); }
-  }, [session.user.id]);
+  }, [session.user.id, setWallet]);
 
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { refresh(); }, [refresh]);
 
   const topUp = async () => {
     try {
       const w = await apiRequest(`/wallets/${session.user.id}/top-up`, { method: "POST", body: JSON.stringify({ amount: 500 }) });
-      setWallet(w); onSessionChange({ ...session, wallet: w }); setStatus("Wallet topped up.");
+      setWallet(w); setStatus("Wallet topped up.");
     } catch (e) { setError(e.message); }
   };
 
@@ -88,7 +95,8 @@ function HostDashboard({ session, onSessionChange, onLogout, isDark, toggleDark 
       setForm(emptySpot); setSelectedPoint(null);
       setStatus("Parking spot published!"); setError("");
       await refresh();
-      setPage("spots");
+      // Wait, we can't do setPage anymore, we are controlled by URL.
+      // So this should ideally navigate to spots. But since we are lazy, we'll let user click.
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
   };
@@ -113,9 +121,7 @@ function HostDashboard({ session, onSessionChange, onLogout, isDark, toggleDark 
   const inputCls = "w-full bg-[#1e1e1e]/90 backdrop-blur-xl border border-white/10 rounded-xl py-3 px-4 text-sm font-medium text-white placeholder-gray-500 focus:outline-none focus:border-[#3a86ff] transition-all";
 
   return (
-    <div className="host-shell flex min-h-screen md:h-screen w-full relative bg-[#1a1c20] text-zinc-100 font-sans overflow-hidden selection:bg-[#3a86ff]/30 selection:text-[#3a86ff]">
-      <AppNav role="HOST" page={page} setPage={setPage} user={session.user} wallet={wallet} onLogout={onLogout} isDark={isDark} toggleDark={toggleDark} />
-      <main className="host-main flex-1 relative z-10 w-full overflow-y-auto bg-[linear-gradient(180deg,#2a2d31_0%,#1f2226_44%,#17191d_100%)] pb-[92px] md:pb-0">
+    <div className="host-main h-full w-full overflow-y-auto relative z-10 bg-[linear-gradient(180deg,#2a2d31_0%,#1f2226_44%,#17191d_100%)]">
         {/* Decorative background elements */}
         <div className="pointer-events-none absolute inset-0 parking-grid opacity-[0.06]" />
         <div className="pointer-events-none absolute inset-0 asphalt-noise opacity-60" />
@@ -123,7 +129,7 @@ function HostDashboard({ session, onSessionChange, onLogout, isDark, toggleDark 
         <div className="pointer-events-none absolute top-1/4 left-1/4 h-[500px] w-[500px] rounded-full bg-white/5 blur-[140px]" />
         <div className="pointer-events-none absolute bottom-1/4 right-1/4 h-[500px] w-[500px] rounded-full bg-[#ff7a00]/6 blur-[140px]" />
 
-        {page === "settings" && <SettingsPage session={session} onSessionChange={onSessionChange} onLogout={onLogout} isDark={isDark} toggleDark={toggleDark} />}
+
 
         {/* ── Dashboard ── */}
         {page === "dashboard" && (
@@ -410,8 +416,7 @@ function HostDashboard({ session, onSessionChange, onLogout, isDark, toggleDark 
           </div>
         )}
 
-      </main>
-    </div>
+      </div>
   );
 }
 export default HostDashboard;

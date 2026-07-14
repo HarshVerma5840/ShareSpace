@@ -1,87 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
+import useSpotScanner from './hooks/useSpotScanner';
 
 export default function SpotScanner({ onAreaCalculated }) {
-  const [stream, setStream] = useState(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [resultImage, setResultImage] = useState(null);
-  const [rect, setRect] = useState(null);
-  const [analysisMeta, setAnalysisMeta] = useState(null);
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
+  const {
+    stream, analyzing, resultImage, rect, setRect,
+    analysisMeta, videoRef, canvasRef, startCamera, capture
+  } = useSpotScanner({ onAreaCalculated });
 
   const [draggingHandle, setDraggingHandle] = useState(null);
   const svgRef = useRef(null);
-
-  const startCamera = async () => {
-    setResultImage(null);
-    setRect(null);
-    setAnalysisMeta(null);
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        // Need to wait for video to play before capturing successfully
-        videoRef.current.play();
-      }
-    } catch (err) {
-      alert("Could not access camera.");
-    }
-  };
-
-  const stopCamera = () => {
-    if (stream) {
-      stream.getTracks().forEach(t => t.stop());
-      setStream(null);
-    }
-  };
-
-  useEffect(() => {
-    return () => stopCamera();
-  }, [stream]);
-
-  const capture = () => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-    
-    // Set actual video resolution to canvas
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    setAnalyzing(true);
-    canvas.toBlob(async (blob) => {
-      setResultImage(URL.createObjectURL(blob));
-      stopCamera();
-      
-      const formData = new FormData();
-      formData.append('file', blob, 'frame.jpg');
-      try {
-        const res = await fetch(`http://${window.location.hostname}:8000/analyze`, {
-          method: 'POST',
-          body: formData
-        });
-        const json = await res.json();
-        if (json.rect) {
-           setRect(json.rect);
-           setAnalysisMeta({
-             confidence: typeof json.confidence === 'number' ? json.confidence : null,
-             fallback: Boolean(json.fallback)
-           });
-           if(onAreaCalculated) onAreaCalculated(json.areaPx);
-        }
-      } catch(e) {
-        console.warn('OpenCV backend error', e);
-        // Fallback default box
-        setRect({ x: canvas.width*0.25, y: canvas.height*0.25, width: canvas.width*0.5, height: canvas.height*0.5 });
-        setAnalysisMeta({ confidence: null, fallback: true });
-      }
-      setAnalyzing(false);
-    }, 'image/jpeg');
-  };
 
   const handlePointerDown = (e, handle) => {
     e.preventDefault();

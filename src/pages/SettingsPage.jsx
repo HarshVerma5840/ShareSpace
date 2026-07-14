@@ -5,7 +5,11 @@ import { getUserRoleLabel, getVerificationLabel, isVerifiedCommuter } from "../u
 import useAuthStore from "../stores/authStore";
 
 function SettingsPage() {
-  const { session, updateSession: onSessionChange, logout: onLogout, isDark, toggleDark } = useAuthStore();
+  const session = useAuthStore((s) => s.session);
+  const onSessionChange = useAuthStore((s) => s.updateSession);
+  const onLogout = useAuthStore((s) => s.logout);
+  const isDark = useAuthStore((s) => s.isDark);
+  const toggleDark = useAuthStore((s) => s.toggleDark);
   const [form, setForm] = useState({
     fullName: session.user.fullName || "",
     email: session.user.email || "",

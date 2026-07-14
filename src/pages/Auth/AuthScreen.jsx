@@ -8,7 +8,7 @@ import { formatCurrency, formatCovered, getUserRoleLabel, getVerificationLabel, 
 import { apiRequest, apiBaseUrl } from "../../utils/api";
 
 function AuthScreen() {
-  const { authenticate: onAuthenticated } = useAuthStore();
+  const onAuthenticated = useAuthStore((s) => s.authenticate);
   const [mode, setMode] = useState("login");
   const [loginForm, setLoginForm] = useState(emptyLogin);
   const [registerForm, setRegisterForm] = useState(emptyRegister);

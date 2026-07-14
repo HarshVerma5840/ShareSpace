@@ -32,4 +32,4 @@ function LandmarkGuide({ landmarks, onFocusPoint }) {
   );
 }
 
-export default LandmarkGuide;
+export default React.memo(LandmarkGuide);

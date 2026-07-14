@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Car, Navigation2, Search, MapPin, ShieldAlert, LogOut, Moon, Sun, Settings, History, Wallet, LayoutDashboard, PlusCircle, LayoutList, Banknote, ListPlus, Map as MapIcon, BadgeCheck, Users, FileCheck2, BarChart3, ParkingCircle, RefreshCw, Trash2, X } from "lucide-react";
+import { useNavigate, useLocation } from 'react-router-dom';
 import useAuthStore from "../../stores/authStore";
 import useMapStore from "../../stores/mapStore";
 import useDashboardStore from "../../stores/dashboardStore";
@@ -8,22 +9,26 @@ import { formatCurrency, formatCovered, getUserRoleLabel, getVerificationLabel, 
 import { apiRequest, apiBaseUrl } from "../../utils/api";
 
 function AppNav() {
-  const { session, logout: onLogout, isDark, toggleDark } = useAuthStore();
-  const { page, setPage, wallet } = useDashboardStore();
+  const session = useAuthStore(s => s.session);
+  const wallet = useDashboardStore(s => s.wallet);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const currentPath = location.pathname;
+  
   const user = session?.user;
   const role = user?.role;
   const hostItems = [
-    { key: "dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
-    { key: "register",  icon: <PlusCircle size={20} />, label: "Register Spot" },
-    { key: "spots",     icon: <LayoutList size={20} />, label: "My Spots" },
-    { key: "earnings",  icon: <Banknote size={20} />, label: "Earnings" },
-    { key: "settings",  icon: <Settings size={20} />, label: "Settings" }
+    { key: "/host", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
+    { key: "/host/register",  icon: <PlusCircle size={20} />, label: "Register Spot" },
+    { key: "/host/spots",     icon: <LayoutList size={20} />, label: "My Spots" },
+    { key: "/host/earnings",  icon: <Banknote size={20} />, label: "Earnings" },
+    { key: "/settings",  icon: <Settings size={20} />, label: "Settings" }
   ];
   const guestItems = [
-    { key: "map",     icon: <MapIcon size={20} />, label: "Find Parking" },
-    { key: "history", icon: <History size={20} />, label: "My Bookings" },
-    { key: "wallet",  icon: <Wallet size={20} />, label: "Wallet" },
-    { key: "settings",  icon: <Settings size={20} />, label: "Settings" }
+    { key: "/customer",     icon: <MapIcon size={20} />, label: "Find Parking" },
+    { key: "/customer/history", icon: <History size={20} />, label: "My Bookings" },
+    { key: "/customer/wallet",  icon: <Wallet size={20} />, label: "Wallet" },
+    { key: "/settings",  icon: <Settings size={20} />, label: "Settings" }
   ];
   const items = role === "HOST" ? hostItems : guestItems;
 
@@ -40,7 +45,7 @@ function AppNav() {
       </div>
       <ul className="flex flex-row md:flex-col gap-1.5 md:gap-2 flex-1 items-center md:items-stretch overflow-x-auto md:overflow-visible my-0 md:my-2 px-2 md:px-0 scrollbar-none">
         {items.map((item) => {
-          const isActive = page === item.key;
+          const isActive = currentPath === item.key;
           return (
             <li key={item.key} className="flex-shrink-0">
               <button
@@ -49,7 +54,7 @@ function AppNav() {
                   ${isActive 
                     ? "active bg-[#3a86ff]/10 text-[#3a86ff] shadow-inner border border-[#3a86ff]/20" 
                     : "text-gray-400 hover:bg-white/5 hover:text-gray-200 border border-transparent"}`}
-                onClick={() => setPage(item.key)}
+                onClick={() => navigate(item.key)}
               >
                 <span className="mb-0.5 md:mb-0">{item.icon}</span>
                 <span className="whitespace-nowrap">{item.label}</span>
